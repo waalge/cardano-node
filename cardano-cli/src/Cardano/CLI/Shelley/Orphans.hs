@@ -15,7 +15,6 @@
 module Cardano.CLI.Shelley.Orphans () where
 
 import           Cardano.Api.Orphans ()
-import           Cardano.Ledger.AuxiliaryData (AuxiliaryDataHash (..))
 import qualified Cardano.Ledger.Credential as Ledger
 import qualified Cardano.Ledger.Crypto as CC (Crypto)
 import qualified Cardano.Ledger.Mary.Value as Ledger.Mary
@@ -23,14 +22,14 @@ import           Cardano.Ledger.PoolDistr (PoolDistr (..))
 import qualified Cardano.Ledger.Shelley.EpochBoundary as Ledger
 import qualified Cardano.Ledger.Shelley.PoolRank as Ledger
 import           Cardano.Ledger.TxIn (TxId (..))
-import           Cardano.Prelude (Bool(True), Category((.)))
+import           Cardano.Prelude (Bool (True), Category ((.)))
 import qualified Cardano.Protocol.TPraos.API as Ledger
 import           Cardano.Protocol.TPraos.BHeader (HashHeader (..))
 import qualified Cardano.Protocol.TPraos.Rules.Prtcl as Ledger
 import qualified Cardano.Protocol.TPraos.Rules.Tickn as Ledger
 import qualified Cardano.Slotting.Slot as Cardano
 import qualified Control.SetAlgebra as SetAlgebra (BiMap, forwards)
-import           Data.Aeson (FromJSON(..), KeyValue((.=)), ToJSON(..), ToJSONKey)
+import           Data.Aeson (FromJSON (..), KeyValue ((.=)), ToJSON (..), ToJSONKey)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Base16 as Base16
 import qualified Data.ByteString.Short as SBS
@@ -78,7 +77,6 @@ deriving newtype instance CC.Crypto crypto => ToJSON (TxId crypto)
 deriving newtype instance CC.Crypto crypto => ToJSON (ShelleyHash crypto)
 deriving newtype instance CC.Crypto crypto => ToJSON (HashHeader crypto)
 
-deriving newtype instance ToJSON (AuxiliaryDataHash StandardCrypto)
 deriving newtype instance ToJSON Ledger.LogWeight
 deriving newtype instance ToJSON (PoolDistr StandardCrypto)
 
