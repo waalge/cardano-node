@@ -1002,7 +1002,7 @@ pQueryCmd =
     pQueryStakeSnapshot = QueryStakeSnapshot'
       <$> pConsensusModeParams
       <*> pNetworkId
-      <*> pStakePoolVerificationKeyHash
+      <*> many pStakePoolVerificationKeyHash
 
     pQueryPoolState :: Parser QueryCmd
     pQueryPoolState = QueryPoolState'

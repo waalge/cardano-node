@@ -187,8 +187,8 @@ runQueryCmd cmd =
       runQueryStakeAddressInfo consensusModeParams addr network mOutFile
     QueryDebugLedgerState' consensusModeParams network mOutFile ->
       runQueryLedgerState consensusModeParams network mOutFile
-    QueryStakeSnapshot' consensusModeParams network poolid ->
-      runQueryStakeSnapshot consensusModeParams network poolid
+    QueryStakeSnapshot' consensusModeParams network mPoolIds ->
+      runQueryStakeSnapshot consensusModeParams network mPoolIds
     QueryProtocolState' consensusModeParams network mOutFile ->
       runQueryProtocolState consensusModeParams network mOutFile
     QueryUTxO' consensusModeParams qFilter networkId mOutFile ->
@@ -625,9 +625,9 @@ runQueryPoolState (AnyConsensusModeParams cModeParams) network poolIds = do
 runQueryStakeSnapshot
   :: AnyConsensusModeParams
   -> NetworkId
-  -> Hash StakePoolKey
+  -> [Hash StakePoolKey]
   -> ExceptT ShelleyQueryCmdError IO ()
-runQueryStakeSnapshot (AnyConsensusModeParams cModeParams) network poolId = do
+runQueryStakeSnapshot (AnyConsensusModeParams cModeParams) network mPoolIds = do
   SocketPath sockPath <- firstExceptT ShelleyQueryCmdEnvVarSocketErr readEnvSocketPath
   let localNodeConnInfo = LocalNodeConnectInfo cModeParams network sockPath
 
@@ -638,9 +638,9 @@ runQueryStakeSnapshot (AnyConsensusModeParams cModeParams) network poolId = do
   eInMode <- toEraInMode era cMode
     & hoistMaybe (ShelleyQueryCmdEraConsensusModeMismatch (AnyConsensusMode cMode) anyE)
 
-  let qInMode = QueryInEra eInMode . QueryInShelleyBasedEra sbe $ QueryStakeSnapshot poolId
+  let qInMode = QueryInEra eInMode . QueryInShelleyBasedEra sbe $ QueryStakeSnapshot $ Just $ Set.fromList mPoolIds
   result <- executeQuery era cModeParams localNodeConnInfo qInMode
-  obtainLedgerEraClassConstraints sbe writeStakeSnapshot result
+  obtainLedgerEraClassConstraints sbe writeStakeSnapshots result
 
 
 runQueryLedgerState
@@ -789,12 +789,12 @@ writeLedgerState mOutFile qState@(SerialisedDebugLedgerState serLedgerState) =
       handleIOExceptT (ShelleyQueryCmdWriteFileError . FileIOError fpath)
         $ LBS.writeFile fpath $ unSerialised serLedgerState
 
-writeStakeSnapshot :: forall era ledgerera. ()
+writeStakeSnapshots :: forall era ledgerera. ()
   => ShelleyLedgerEra era ~ ledgerera
   => Era.Crypto ledgerera ~ StandardCrypto
   => SerialisedStakeSnapshots era
   -> ExceptT ShelleyQueryCmdError IO ()
-writeStakeSnapshot qState =
+writeStakeSnapshots qState =
   case decodeStakeSnapshot qState of
     Left err -> left (ShelleyQueryCmdStakeSnapshotDecodeError err)
 
