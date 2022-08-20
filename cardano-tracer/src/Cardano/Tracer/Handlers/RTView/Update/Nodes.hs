@@ -38,8 +38,6 @@ import           Cardano.Tracer.Environment
 import           Cardano.Tracer.Handlers.Metrics.Utils
 import           Cardano.Tracer.Handlers.RTView.State.Displayed
 import           Cardano.Tracer.Handlers.RTView.State.EraSettings
-import           Cardano.Tracer.Handlers.RTView.State.Errors
-import           Cardano.Tracer.Handlers.RTView.State.TraceObjects
 import           Cardano.Tracer.Handlers.RTView.UI.Charts
 import           Cardano.Tracer.Handlers.RTView.UI.HTML.Node.Column
 import           Cardano.Tracer.Handlers.RTView.UI.HTML.NoNodes
@@ -58,13 +56,11 @@ updateNodesUI
   -> NonEmpty LoggingParams
   -> Colors
   -> DatasetsIndices
-  -> Errors
-  -> UI.Timer
   -> UI.Timer
   -> UI ()
-updateNodesUI tracerEnv@TracerEnv{teConnectedNodes, teAcceptedMetrics, teSavedTO}
+updateNodesUI tracerEnv@TracerEnv{teConnectedNodes, teAcceptedMetrics}
               displayedElements nodesEraSettings loggingConfig colors
-              datasetIndices nodesErrors updateErrorsTimer noNodesProgressTimer = do
+              datasetIndices noNodesProgressTimer = do
   (connected, displayedEls) <- liftIO . atomically $ (,)
     <$> readTVar teConnectedNodes
     <*> readTVar displayedElements
@@ -78,8 +74,6 @@ updateNodesUI tracerEnv@TracerEnv{teConnectedNodes, teAcceptedMetrics, teSavedTO
       tracerEnv
       newlyConnected
       loggingConfig
-      nodesErrors
-      updateErrorsTimer
     checkNoNodesState connected noNodesProgressTimer
     askNSetNodeInfo tracerEnv newlyConnected displayedElements
     addDatasetsForConnected tracerEnv newlyConnected colors datasetIndices
@@ -87,8 +81,6 @@ updateNodesUI tracerEnv@TracerEnv{teConnectedNodes, teAcceptedMetrics, teSavedTO
     liftIO $
       updateDisplayedElements displayedElements connected
   setBlockReplayProgress connected teAcceptedMetrics
-  setChunkValidationProgress connected teSavedTO
-  setLedgerDBProgress connected teSavedTO
   setProducerMode connected teAcceptedMetrics
   setLeadershipStats connected displayedElements teAcceptedMetrics
   setEraEpochInfo connected displayedElements teAcceptedMetrics nodesEraSettings
@@ -97,19 +89,13 @@ addColumnsForConnected
   :: TracerEnv
   -> Set NodeId
   -> NonEmpty LoggingParams
-  -> Errors
-  -> UI.Timer
   -> UI ()
-addColumnsForConnected tracerEnv newlyConnected loggingConfig nodesErrors updateErrorsTimer = do
+addColumnsForConnected tracerEnv newlyConnected loggingConfig = do
   unless (S.null newlyConnected) $ do
     window <- askWindow
     findAndShow window "main-table-container"
   forM_ newlyConnected $
-    addNodeColumn
-      tracerEnv
-      loggingConfig
-      nodesErrors
-      updateErrorsTimer
+    addNodeColumn tracerEnv loggingConfig
 
 addDatasetsForConnected
   :: TracerEnv
@@ -203,57 +189,6 @@ setBlockReplayProgress connected acceptedMetrics = do
         if "100" `T.isInfixOf` progressPctS
           then setTextAndClasses nodeBlockReplayElId "100&nbsp;%" "rt-view-percent-done"
           else setTextValue nodeBlockReplayElId $ progressPctS <> "&nbsp;%"
-
-setChunkValidationProgress
-  :: Set NodeId
-  -> SavedTraceObjects
-  -> UI ()
-setChunkValidationProgress connected savedTO = do
-  savedTraceObjects <- liftIO $ readTVarIO savedTO
-  forM_ connected $ \nodeId@(NodeId anId) ->
-    whenJust (M.lookup nodeId savedTraceObjects) $ \savedTOForNode -> do
-      let nodeChunkValidationElId = anId <> "__node-chunk-validation"
-      forM_ (M.toList savedTOForNode) $ \(namespace, (trObValue, _, _)) ->
-        case namespace of
-          "ChainDB.ImmutableDBEvent.ChunkValidation.ValidatedChunk" ->
-            -- In this case we don't need to check if the value differs from displayed one,
-            -- because this 'TraceObject' is forwarded only with new values, and after 100%
-            -- the node doesn't forward it anymore.
-            --
-            -- Example: "Validated chunk no. 2262 out of 2423. Progress: 93.36%"
-            case T.words trObValue of
-              [_, _, _, current, _, _, from, _, progressPct] ->
-                setTextValue nodeChunkValidationElId $
-                             T.init progressPct <> "&nbsp;%: no. " <> current <> " from " <> T.init from
-              _ -> return ()
-          "ChainDB.ImmutableDBEvent.ValidatedLastLocation" ->
-            setTextAndClasses nodeChunkValidationElId "100&nbsp;%" "rt-view-percent-done"
-          _ -> return ()
-
-setLedgerDBProgress
-  :: Set NodeId
-  -> SavedTraceObjects
-  -> UI ()
-setLedgerDBProgress connected savedTO = do
-  savedTraceObjects <- liftIO $ readTVarIO savedTO
-  forM_ connected $ \nodeId@(NodeId anId) ->
-    whenJust (M.lookup nodeId savedTraceObjects) $ \savedTOForNode -> do
-      let nodeLedgerDBUpdateElId = anId <> "__node-update-ledger-db"
-      forM_ (M.toList savedTOForNode) $ \(namespace, (trObValue, _, _)) ->
-        case namespace of
-          "ChainDB.InitChainSelEvent.UpdateLedgerDb" ->
-            -- In this case we don't need to check if the value differs from displayed one,
-            -- because this 'TraceObject' is forwarded only with new values, and after 100%
-            -- the node doesn't forward it anymore.
-            --
-            -- Example: "Pushing ledger state for block b1e6...fc5a at slot 54495204. Progress: 3.66%"
-            case T.words trObValue of
-              [_, _, _, _, _, _, _, _, _, _, progressPct] -> do
-                if "100" `T.isInfixOf` progressPct
-                  then setTextAndClasses nodeLedgerDBUpdateElId "100&nbsp;%" "rt-view-percent-done"
-                  else setTextValue nodeLedgerDBUpdateElId $ T.init progressPct <> "&nbsp;%"
-              _ -> return ()
-          _ -> return ()
 
 setProducerMode
   :: Set NodeId

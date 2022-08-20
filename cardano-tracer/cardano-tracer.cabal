@@ -61,7 +61,6 @@ library
 
                        Cardano.Tracer.Handlers.RTView.State.Displayed
                        Cardano.Tracer.Handlers.RTView.State.EraSettings
-                       Cardano.Tracer.Handlers.RTView.State.Errors
                        Cardano.Tracer.Handlers.RTView.State.Historical
                        Cardano.Tracer.Handlers.RTView.State.Last
                        Cardano.Tracer.Handlers.RTView.State.Peers
@@ -73,10 +72,10 @@ library
                        Cardano.Tracer.Handlers.RTView.UI.CSS.Own
                        Cardano.Tracer.Handlers.RTView.UI.HTML.Node.Column
                        Cardano.Tracer.Handlers.RTView.UI.HTML.Node.EKG
-                       Cardano.Tracer.Handlers.RTView.UI.HTML.Node.Errors
                        Cardano.Tracer.Handlers.RTView.UI.HTML.Node.Peers
                        Cardano.Tracer.Handlers.RTView.UI.HTML.About
                        Cardano.Tracer.Handlers.RTView.UI.HTML.Body
+                       Cardano.Tracer.Handlers.RTView.UI.HTML.Logs
                        Cardano.Tracer.Handlers.RTView.UI.HTML.Main
                        Cardano.Tracer.Handlers.RTView.UI.HTML.NoNodes
                        Cardano.Tracer.Handlers.RTView.UI.HTML.Notifications
@@ -93,7 +92,6 @@ library
                        Cardano.Tracer.Handlers.RTView.Update.Chain
                        Cardano.Tracer.Handlers.RTView.Update.EKG
                        Cardano.Tracer.Handlers.RTView.Update.EraSettings
-                       Cardano.Tracer.Handlers.RTView.Update.Errors
                        Cardano.Tracer.Handlers.RTView.Update.Historical
                        Cardano.Tracer.Handlers.RTView.Update.KES
                        Cardano.Tracer.Handlers.RTView.Update.Leadership
@@ -103,6 +101,7 @@ library
                        Cardano.Tracer.Handlers.RTView.Update.Peers
                        Cardano.Tracer.Handlers.RTView.Update.Reload
                        Cardano.Tracer.Handlers.RTView.Update.Resources
+                       Cardano.Tracer.Handlers.RTView.Update.TraceObjects
                        Cardano.Tracer.Handlers.RTView.Update.Transactions
                        Cardano.Tracer.Handlers.RTView.Update.Utils
 
@@ -118,7 +117,7 @@ library
   other-modules:       Paths_cardano_tracer
 
   build-depends:         aeson
-                       , aeson-pretty
+                       -- , aeson-pretty
                        , async
                        , async-extras
                        , bimap

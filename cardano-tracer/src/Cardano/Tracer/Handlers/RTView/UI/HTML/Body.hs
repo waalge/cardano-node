@@ -20,12 +20,13 @@ import           Cardano.Tracer.Environment
 import           Cardano.Tracer.Handlers.RTView.State.Historical
 import           Cardano.Tracer.Handlers.RTView.UI.Charts
 import           Cardano.Tracer.Handlers.RTView.UI.HTML.About
+import           Cardano.Tracer.Handlers.RTView.UI.HTML.Logs
 import           Cardano.Tracer.Handlers.RTView.UI.HTML.NoNodes
 import           Cardano.Tracer.Handlers.RTView.UI.HTML.Notifications
 import           Cardano.Tracer.Handlers.RTView.UI.Img.Icons
 import           Cardano.Tracer.Handlers.RTView.UI.JS.ChartJS
 import qualified Cardano.Tracer.Handlers.RTView.UI.JS.Charts as Chart
-import           Cardano.Tracer.Handlers.RTView.UI.JS.Utils
+--import           Cardano.Tracer.Handlers.RTView.UI.JS.Utils
 import           Cardano.Tracer.Handlers.RTView.UI.Notifications
 import           Cardano.Tracer.Handlers.RTView.UI.Theme
 import           Cardano.Tracer.Handlers.RTView.UI.Types
@@ -125,6 +126,14 @@ mkPageBody tracerEnv networkConfig dsIxs = do
   on UI.click showHideResources . const $
     changeVisibilityForCharts showHideResources "resources-charts" "Resources"
 
+  logsLiveView <- mkLogsLiveView
+  logsLiveViewButton <- UI.button ## "logs-live-view-button"
+                                  #. "button is-info"
+                                  # set text "Live view"
+  on UI.click logsLiveViewButton . const $ do
+    fadeInModal logsLiveView
+    void $ element logsLiveView # set dataState "opened"
+
   -- Body.
   window <- askWindow
   body <-
@@ -187,27 +196,12 @@ mkPageBody tracerEnv networkConfig dsIxs = do
                               ]
                           , UI.tr ## "node-logs-row" #+
                               [ UI.td #+ [ image "rt-view-overview-icon" logsSVG
-                                         , string "Logs"
+                                         , string "Logs paths"
                                          ]
                               ]
-                          --, UI.tr ## "node-chunk-validation-row" #+
-                          --    [ UI.td #+ [ image "rt-view-overview-icon" dbSVG
-                          --               , string "Chunk validation"
-                          --               ]
-                          --    ]
-                          --, UI.tr ## "node-update-ledger-db-row" #+
-                          --    [ UI.td #+ [ image "rt-view-overview-icon" dbSVG
-                          --               , string "Ledger DB"
-                          --               ]
-                          --    ]
                           , UI.tr ## "node-peers-row" #+
                               [ UI.td #+ [ image "rt-view-overview-icon" peersSVG
                                          , string "Peers"
-                                         ]
-                              ]
-                          , UI.tr ## "node-errors-row" #+
-                              [ UI.td #+ [ image "rt-view-overview-icon" errorsSVG
-                                         , string "Errors"
                                          ]
                               ]
                           , UI.tr ## "node-leadership-row" #+
@@ -235,6 +229,10 @@ mkPageBody tracerEnv networkConfig dsIxs = do
                               ]
                           ]
                       ]
+                  ]
+              , UI.div #. "" #+
+                  [ element logsLiveView
+                  , element logsLiveViewButton
                   ]
               ]
           , UI.mkElement "section" #. "section" #+
@@ -328,7 +326,7 @@ mkPageBody tracerEnv networkConfig dsIxs = do
       , UI.mkElement "script" # set UI.html chartJSPluginZoom
       ]
 
-  closeModalsByEscapeButton
+  -- closeModalsByEscapeButton
 
   Chart.prepareChartsJS
 

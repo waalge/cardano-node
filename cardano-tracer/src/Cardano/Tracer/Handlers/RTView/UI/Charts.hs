@@ -9,6 +9,7 @@ module Cardano.Tracer.Handlers.RTView.UI.Charts
   , addNodeDatasetsToCharts
   , addPointsToChart
   , addAllPointsToChart
+  , getSavedColorForNode
   , restoreChartsSettings
   , saveChartsSettings
   , changeChartsToLightTheme
@@ -32,9 +33,8 @@ import           Control.Exception.Extra (ignore, try_)
 import           Control.Monad (forM, forM_, unless, when)
 import           Control.Monad.Extra (whenJustM)
 import           Data.Aeson (decodeFileStrict', encodeFile)
-import           Data.Char (isDigit)
-import           Data.List (find, isInfixOf, isPrefixOf)
-import           Data.List.Extra (chunksOf, lower)
+import           Data.List (find)
+import           Data.List.Extra (chunksOf)
 import qualified Data.Map.Strict as M
 import           Data.Maybe (catMaybes)
 import qualified Data.Set as S
@@ -42,7 +42,7 @@ import           Data.Text (pack, unpack)
 import           Graphics.UI.Threepenny.Core
 import           Text.Read (readMaybe)
 import           System.Directory.Extra (listFiles)
-import           System.FilePath ((</>), takeBaseName)
+import           System.FilePath ((</>), takeFileName)
 
 import           Cardano.Tracer.Environment
 import           Cardano.Tracer.Handlers.RTView.State.Historical
@@ -323,23 +323,13 @@ dataNameToChartId dataName =
 getSavedColorForNode :: NodeName -> IO (Maybe Color)
 getSavedColorForNode nodeName = do
   colorsDir <- getPathToChartColorsDir
-  colorFiles <- map (\cf -> colorsDir </> takeBaseName cf) <$> listFiles colorsDir
-  case find (\cf -> unpack nodeName `isInfixOf` cf) colorFiles of
+  colorFiles <- map (\cf -> colorsDir </> takeFileName cf) <$> listFiles colorsDir
+  case find (\cf -> unpack nodeName == takeFileName cf) colorFiles of
     Nothing -> return Nothing
     Just colorFile ->
       try_ (readFile colorFile) >>= \case
         Left _ -> return Nothing
-        Right code ->
-          if itLooksLikeColor code
-            then return . Just $ Color code
-            else return Nothing
- where
-  itLooksLikeColor :: String -> Bool
-  itLooksLikeColor code =
-       length code == 7
-    && "#" `isPrefixOf` code
-    && all (\c -> isDigit c || c `elem` ['a' .. 'f'] )
-           (tail $ lower code)
+        Right code -> return . Just $ Color code
 
 saveColorForNode :: NodeName -> Color -> IO ()
 saveColorForNode nodeName (Color code) = do

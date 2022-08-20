@@ -17,8 +17,8 @@ import           Cardano.Tracer.Configuration
 import           Cardano.Tracer.Environment
 import           Cardano.Tracer.Handlers.RTView.State.Displayed
 import           Cardano.Tracer.Handlers.RTView.State.EraSettings
-import           Cardano.Tracer.Handlers.RTView.State.Errors
 import           Cardano.Tracer.Handlers.RTView.State.Peers
+import           Cardano.Tracer.Handlers.RTView.State.TraceObjects
 import           Cardano.Tracer.Handlers.RTView.UI.Charts
 import           Cardano.Tracer.Handlers.RTView.UI.CSS.Bulma
 import           Cardano.Tracer.Handlers.RTView.UI.CSS.Own
@@ -28,12 +28,12 @@ import           Cardano.Tracer.Handlers.RTView.UI.Notifications
 import           Cardano.Tracer.Handlers.RTView.UI.Theme
 import           Cardano.Tracer.Handlers.RTView.UI.Utils
 import           Cardano.Tracer.Handlers.RTView.Update.EKG
-import           Cardano.Tracer.Handlers.RTView.Update.Errors
 import           Cardano.Tracer.Handlers.RTView.Update.KES
 import           Cardano.Tracer.Handlers.RTView.Update.Nodes
 import           Cardano.Tracer.Handlers.RTView.Update.NodeState
 import           Cardano.Tracer.Handlers.RTView.Update.Peers
 import           Cardano.Tracer.Handlers.RTView.Update.Reload
+import           Cardano.Tracer.Handlers.RTView.Update.TraceObjects
 import           Cardano.Tracer.Handlers.RTView.Update.Utils
 
 mkMainPage
@@ -43,11 +43,10 @@ mkMainPage
   -> PageReloadedFlag
   -> NonEmpty LoggingParams
   -> Network
-  -> Errors
   -> UI.Window
   -> UI ()
 mkMainPage tracerEnv displayedElements nodesEraSettings reloadFlag
-           loggingConfig networkConfig nodesErrors window = do
+           loggingConfig networkConfig window = do
   void $ return window # set UI.title pageTitle
   void $ UI.getHead window #+
     [ UI.link # set UI.rel "icon"
@@ -95,24 +94,24 @@ mkMainPage tracerEnv displayedElements nodesEraSettings reloadFlag
         UI.stop uiNoNodesProgressTimer
         findAndSet hiddenOnly window elId
 
-  uiErrorsTimer <- UI.timer # set UI.interval 3000
-  on UI.tick uiErrorsTimer . const $
-    updateNodesErrors tracerEnv nodesErrors
-
   whenM (liftIO $ readTVarIO reloadFlag) $ do
     liftIO $ cleanupDisplayedValues displayedElements
 
     updateUIAfterReload
       tracerEnv
-      displayedElements 
+      displayedElements
       loggingConfig
       colors
       datasetIndices
-      nodesErrors
-      uiErrorsTimer
       uiNoNodesProgressTimer
 
     liftIO $ pageWasNotReload reloadFlag
+
+  llvCounters <- liftIO initLogsLiveViewCounters
+
+  uiSavedTOTimer <- UI.timer # set UI.interval 1000
+  on UI.tick uiSavedTOTimer . const $
+    updateUIBySavedTOs tracerEnv llvCounters
 
   -- Uptime is a real-time clock, so update it every second.
   uiUptimeTimer <- UI.timer # set UI.interval 1000
@@ -124,7 +123,7 @@ mkMainPage tracerEnv displayedElements nodesEraSettings reloadFlag
     updateEKGMetrics tracerEnv
 
   uiNodesTimer <- UI.timer # set UI.interval 1000
-  on UI.tick uiNodesTimer . const $
+  on UI.tick uiNodesTimer . const $ do
     updateNodesUI
       tracerEnv
       displayedElements
@@ -132,8 +131,6 @@ mkMainPage tracerEnv displayedElements nodesEraSettings reloadFlag
       loggingConfig
       colors
       datasetIndices
-      nodesErrors
-      uiErrorsTimer
       uiNoNodesProgressTimer
 
   uiPeersTimer <- UI.timer # set UI.interval 4000
@@ -142,20 +139,20 @@ mkMainPage tracerEnv displayedElements nodesEraSettings reloadFlag
     updateNodesPeers tracerEnv peers
     updateKESInfo tracerEnv nodesEraSettings displayedElements
 
+  UI.start uiSavedTOTimer
   UI.start uiUptimeTimer
   UI.start uiNodesTimer
   UI.start uiPeersTimer
-  UI.start uiErrorsTimer
   UI.start uiEKGTimer
   UI.start uiNoNodesProgressTimer
 
   on UI.disconnect window . const $ do
     webPageIsClosed tracerEnv
     UI.stop uiNodesTimer
+    UI.stop uiSavedTOTimer
     UI.stop uiUptimeTimer
     UI.stop uiPeersTimer
     UI.stop uiEKGTimer
-    UI.stop uiErrorsTimer
     UI.stop uiNoNodesProgressTimer
     liftIO $ pageWasReload reloadFlag
 
