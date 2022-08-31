@@ -415,8 +415,8 @@ as described above. For this example, we will describe the process using an
 A script address is required in order to use a script. Construct this as follows:
 
 ```
-cardano-cli address build-script
-  --script-file allMultiSigScript
+cardano-cli address build
+  --payment-script-file allMultiSigScript
   --testnet-magic 42
   --out-file script.addr
 ```
@@ -432,9 +432,8 @@ To construct and submit a tx to send ada to the script address, construct the
 transaction body:
 
 ```bash
-cardano-cli transaction build-raw
+cardano-cli transaction build
     --invalid-hereafter 1000
-    --fee 0
     --tx-in utxoinput
     --tx-out "$(< script.addr) ${amount}"
     --out-file txbody
@@ -485,7 +484,6 @@ To construct the script witness and three key witnesses required by the example
 ```bash
 cardano-cli transaction witness \
   --tx-body-file spendScriptTxBody \
-  --script-file allMultiSigScript \
   --testnet-magic 42 \
   --out-file scriptWitness
 
@@ -598,11 +596,11 @@ than or equal to the specified slot number in our simple script. In the example
 above this means >= 1000.
 
 ```bash
-cardano-cli transaction build-raw \
+cardano-cli transaction build \
     --invalid-hereafter 1000 \
     --invalid-before 1000\
-    --fee 0 \
     --tx-in (txin of script address)
+    --tx-in-script-file allMultiSigScript \
     --tx-out yourspecifiedtxout \
     --out-file spendScriptTxBody
 ```
@@ -633,11 +631,11 @@ than or equal to the specified slot number in our simple script. In the example
 above this means <= 3000:
 
 ```bash
-cardano-cli transaction build-raw \
+cardano-cli transaction build \
     --invalid-hereafter 1000 \
     --invalid-hereafter 3000\
-    --fee 0 \
     --tx-in (txin of script address)
+    --tx-in-script-file allMultiSigScript \
     --tx-out yourspecifiedtxout \
     --out-file spendScriptTxBody
 ```
