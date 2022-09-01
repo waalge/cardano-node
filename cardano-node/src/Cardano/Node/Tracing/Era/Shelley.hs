@@ -33,8 +33,7 @@ import           Cardano.Slotting.Block (BlockNo (..))
 import           Ouroboros.Network.Block (SlotNo (..), blockHash, blockNo, blockSlot)
 import           Ouroboros.Network.Point (WithOrigin, withOriginToMaybe)
 
-import qualified Cardano.Ledger.Babbage.Rules.Utxo as Babbage
-import qualified Cardano.Ledger.Babbage.Rules.Utxow as Babbage
+import qualified Cardano.Ledger.Babbage.Rules as Babbage
 import           Ouroboros.Consensus.Ledger.SupportsMempool (txId)
 import qualified Ouroboros.Consensus.Ledger.SupportsMempool as SupportsMempool
 import qualified Ouroboros.Consensus.Protocol.Ledger.HotKey as HotKey
@@ -53,10 +52,8 @@ import           Cardano.Protocol.TPraos.Rules.Updn (UpdnPredicateFailure)
 
 
 import qualified Cardano.Ledger.Alonzo.PlutusScriptApi as Alonzo
-import           Cardano.Ledger.Alonzo.Rules.Bbody (AlonzoBbodyPredFail)
-import qualified Cardano.Ledger.Alonzo.Rules.Utxo as Alonzo
-import qualified Cardano.Ledger.Alonzo.Rules.Utxos as Alonzo
-import           Cardano.Ledger.Alonzo.Rules.Utxow (UtxowPredicateFail (..))
+import           Cardano.Ledger.Alonzo.Rules
+import qualified Cardano.Ledger.Alonzo.Rules as Alonzo
 import qualified Cardano.Ledger.Alonzo.Tx as Alonzo
 import qualified Cardano.Ledger.AuxiliaryData as Core
 import           Cardano.Ledger.BaseTypes (activeSlotLog, strictMaybeToMaybe)
@@ -64,13 +61,12 @@ import           Cardano.Ledger.Chain
 import qualified Cardano.Ledger.Core as Core
 import qualified Cardano.Ledger.Core as Ledger
 import qualified Cardano.Ledger.Crypto as Core
-import qualified Cardano.Ledger.Era as Ledger
 import qualified Cardano.Ledger.SafeHash as SafeHash
-import qualified Cardano.Ledger.ShelleyMA.Rules.Utxo as MA
+import qualified Cardano.Ledger.ShelleyMA.Rules as MA
 import qualified Cardano.Ledger.ShelleyMA.Timelocks as MA
 
 -- TODO: this should be exposed via Cardano.Api
-import           Cardano.Ledger.Shelley.API hiding (ShelleyBasedEra)
+import           Cardano.Ledger.Shelley.API
 
 import           Cardano.Ledger.Shelley.Rules.Bbody
 import           Cardano.Ledger.Shelley.Rules.Deleg
@@ -90,8 +86,10 @@ import           Cardano.Ledger.Shelley.Rules.Snap
 import           Cardano.Ledger.Shelley.Rules.Tick
 import           Cardano.Ledger.Shelley.Rules.Upec
 import           Cardano.Ledger.Shelley.Rules.Utxo
+import qualified Cardano.Ledger.Shelley.Rules.Utxo as ShelleyLedger
 import           Cardano.Ledger.Shelley.Rules.Utxow
 
+import qualified Cardano.Ledger.Crypto as Crypto
 import           Cardano.Protocol.TPraos.API (ChainTransitionError (ChainTransitionError))
 import           Cardano.Protocol.TPraos.OCert (KESPeriod (KESPeriod))
 import           Cardano.Protocol.TPraos.Rules.Prtcl
@@ -126,14 +124,14 @@ instance ShelleyCompatible protocol era => LogFormatting (Header (ShelleyBlock p
         ]
 
 instance ( ShelleyBasedEra era
-         , LogFormatting (PredicateFailure (UTXO era))
-         , LogFormatting (PredicateFailure (UTXOW era))
+         , LogFormatting (PredicateFailure (ShelleyUTXO era))
+         , LogFormatting (PredicateFailure (ShelleyUTXOW era))
          , LogFormatting (PredicateFailure (Core.EraRule "LEDGER" era))
          ) => LogFormatting (ApplyTxError era) where
   forMachine dtal (ApplyTxError predicateFailures) =
     mconcat $ map (forMachine dtal) predicateFailures
 
-instance Core.Crypto era => LogFormatting (TPraosCannotForge era) where
+instance Crypto.Crypto era => LogFormatting (TPraosCannotForge era) where
   forMachine _dtal (TPraosCannotForgeKeyNotUsableYet wallClockPeriod keyStartPeriod) =
     mconcat
       [ "kind" .= String "TPraosCannotForgeKeyNotUsableYet"
@@ -231,8 +229,8 @@ instance LogFormatting HotKey.KESEvolutionError where
       ]
 
 instance ( ShelleyBasedEra era
-         , LogFormatting (PredicateFailure (UTXO era))
-         , LogFormatting (PredicateFailure (UTXOW era))
+         , LogFormatting (PredicateFailure (ShelleyUTXO era))
+         , LogFormatting (PredicateFailure (ShelleyUTXOW era))
          , LogFormatting (PredicateFailure (Core.EraRule "BBODY" era))
          ) => LogFormatting (ShelleyLedgerError era) where
   forMachine dtal (BBodyError (BlockTransitionError fs)) =
@@ -241,21 +239,21 @@ instance ( ShelleyBasedEra era
              ]
 
 instance ( ShelleyBasedEra era
-         , ToJSON (Core.PParamsDelta era)
+         , ToJSON (Core.PParamsUpdate era)
          ) => LogFormatting (ShelleyLedgerUpdate era) where
   forMachine dtal (ShelleyUpdatedProtocolUpdates updates) =
     mconcat [ "kind" .= String "ShelleyUpdatedProtocolUpdates"
              , "updates" .= map (forMachine dtal) updates
              ]
 
-instance (Ledger.Era era, ToJSON (Core.PParamsDelta era))
+instance (Ledger.Era era, ToJSON (Core.PParamsUpdate era))
          => LogFormatting (ProtocolUpdate era) where
   forMachine dtal ProtocolUpdate{protocolUpdateProposal, protocolUpdateState} =
     mconcat [ "proposal" .= forMachine dtal protocolUpdateProposal
              , "state"    .= forMachine dtal protocolUpdateState
              ]
 
-instance ToJSON (Core.PParamsDelta era)
+instance ToJSON (Core.PParamsUpdate era)
          => LogFormatting (UpdateProposal era) where
   forMachine _dtal UpdateProposal{proposalParams, proposalVersion, proposalEpoch} =
     mconcat [ "params"  .= proposalParams
@@ -263,13 +261,13 @@ instance ToJSON (Core.PParamsDelta era)
              , "epoch"   .= proposalEpoch
              ]
 
-instance Core.Crypto crypto => LogFormatting (UpdateState crypto) where
+instance Crypto.Crypto crypto => LogFormatting (UpdateState crypto) where
   forMachine _dtal UpdateState{proposalVotes, proposalReachedQuorum} =
     mconcat [ "proposal"      .= proposalVotes
              , "reachedQuorum" .= proposalReachedQuorum
              ]
 
-instance Core.Crypto crypto => LogFormatting (ChainTransitionError crypto) where
+instance Crypto.Crypto crypto => LogFormatting (ChainTransitionError crypto) where
   forMachine dtal (ChainTransitionError fs) =
     mconcat [ "kind" .= String "ChainTransitionError"
              , "failures" .= map (forMachine dtal) fs
@@ -316,11 +314,11 @@ instance LogFormatting (PrtlSeqFailure crypto) where
              ]
 
 instance ( ShelleyBasedEra era
-         , LogFormatting (PredicateFailure (UTXO era))
-         , LogFormatting (PredicateFailure (UTXOW era))
+         , LogFormatting (PredicateFailure (ShelleyUTXO era))
+         , LogFormatting (PredicateFailure (ShelleyUTXOW era))
          , LogFormatting (PredicateFailure (Core.EraRule "LEDGER" era))
          , LogFormatting (PredicateFailure (Core.EraRule "LEDGERS" era))
-         ) => LogFormatting (BbodyPredicateFailure era) where
+         ) => LogFormatting (ShelleyBbodyPredFailure era) where
   forMachine _dtal (WrongBlockBodySizeBBODY actualBodySz claimedBodySz) =
     mconcat [ "kind" .= String "WrongBlockBodySizeBBODY"
              , "actualBlockBodySize" .= actualBodySz
@@ -335,20 +333,20 @@ instance ( ShelleyBasedEra era
 
 
 instance ( ShelleyBasedEra era
-         , LogFormatting (PredicateFailure (UTXO era))
-         , LogFormatting (PredicateFailure (UTXOW era))
+         , LogFormatting (PredicateFailure (ShelleyUTXO era))
+         , LogFormatting (PredicateFailure (ShelleyUTXOW era))
          , LogFormatting (PredicateFailure (Core.EraRule "LEDGER" era))
-         ) => LogFormatting (LedgersPredicateFailure era) where
+         ) => LogFormatting (ShelleyLedgersPredFailure era) where
   forMachine dtal (LedgerFailure f) = forMachine dtal f
 
 
 instance ( ShelleyBasedEra era
          , ToJSON (Core.AuxiliaryDataHash (Ledger.Crypto era))
-         , LogFormatting (PredicateFailure (UTXO era))
-         , LogFormatting (PredicateFailure (UTXOW era))
+         , LogFormatting (PredicateFailure (ShelleyUTXO era))
+         , LogFormatting (PredicateFailure (ShelleyUTXOW era))
          , LogFormatting (PredicateFailure (Core.EraRule "DELEGS" era))
          , LogFormatting (PredicateFailure (Core.EraRule "UTXOW" era))
-         ) => LogFormatting (LedgerPredicateFailure era) where
+         ) => LogFormatting (ShelleyLedgerPredFailure era) where
   forMachine dtal (UtxowFailure f)  = forMachine dtal f
   forMachine dtal (DelegsFailure f) = forMachine dtal f
 
@@ -358,8 +356,8 @@ instance ( ShelleyBasedEra era
          , Ledger.Crypto era ~ StandardCrypto
          , LogFormatting (PredicateFailure (Ledger.EraRule "PPUP" era))
          , LogFormatting (PredicateFailure (Ledger.EraRule "UTXO" era))
-         ) => LogFormatting (UtxowPredicateFail era) where
-  forMachine dtal (WrappedShelleyEraFailure utxoPredFail) =
+         ) => LogFormatting (AlonzoUtxowPredFailure era) where
+  forMachine dtal (ShelleyInAlonzoUtxowPredFailure utxoPredFail) =
     forMachine dtal utxoPredFail
   forMachine _ (MissingRedeemers scripts) =
     mconcat [ "kind" .= String "MissingRedeemers"
@@ -427,9 +425,9 @@ renderScriptPurpose (Alonzo.Certifying cert) =
 instance ( ShelleyBasedEra era
          , Ledger.Crypto era ~ StandardCrypto
          , ToJSON (Core.AuxiliaryDataHash (Ledger.Crypto era))
-         , LogFormatting (PredicateFailure (UTXO era))
+         , LogFormatting (PredicateFailure (ShelleyUTXO era))
          , LogFormatting (PredicateFailure (Core.EraRule "UTXO" era))
-         ) => LogFormatting (UtxowPredicateFailure era) where
+         ) => LogFormatting (ShelleyUtxowPredFailure era) where
   forMachine _dtal (InvalidWitnessesUTXOW wits') =
     mconcat [ "kind" .= String "InvalidWitnessesUTXOW"
              , "invalidWitnesses" .= map textShow wits'
@@ -477,52 +475,52 @@ instance ( ShelleyBasedEra era
          , ToJSON (Core.TxOut era)
          , LogFormatting (PredicateFailure (Core.EraRule "PPUP" era))
          )
-      => LogFormatting (UtxoPredicateFailure era) where
-  forMachine _dtal (BadInputsUTxO badInputs) =
+      => LogFormatting (ShelleyUtxoPredFailure era) where
+  forMachine _dtal (ShelleyLedger.BadInputsUTxO badInputs) =
     mconcat [ "kind" .= String "BadInputsUTxO"
              , "badInputs" .= badInputs
              , "error" .= renderBadInputsUTxOErr badInputs
              ]
-  forMachine _dtal (ExpiredUTxO ttl slot) =
+  forMachine _dtal (ShelleyLedger.ExpiredUTxO ttl slot) =
     mconcat [ "kind" .= String "ExpiredUTxO"
              , "ttl"  .= ttl
              , "slot" .= slot ]
-  forMachine _dtal (MaxTxSizeUTxO txsize maxtxsize) =
+  forMachine _dtal (ShelleyLedger.MaxTxSizeUTxO txsize maxtxsize) =
     mconcat [ "kind" .= String "MaxTxSizeUTxO"
              , "size" .= txsize
              , "maxSize" .= maxtxsize ]
   -- TODO: Add the minimum allowed UTxO value to OutputTooSmallUTxO
-  forMachine _dtal (OutputTooSmallUTxO badOutputs) =
+  forMachine _dtal (ShelleyLedger.OutputTooSmallUTxO badOutputs) =
     mconcat [ "kind" .= String "OutputTooSmallUTxO"
              , "outputs" .= badOutputs
              , "error" .= String "The output is smaller than the allow minimum \
                                  \UTxO value defined in the protocol parameters"
              ]
-  forMachine _dtal (OutputBootAddrAttrsTooBig badOutputs) =
+  forMachine _dtal (ShelleyLedger.OutputBootAddrAttrsTooBig badOutputs) =
     mconcat [ "kind" .= String "OutputBootAddrAttrsTooBig"
              , "outputs" .= badOutputs
              , "error" .= String "The Byron address attributes are too big"
              ]
-  forMachine _dtal InputSetEmptyUTxO =
+  forMachine _dtal ShelleyLedger.InputSetEmptyUTxO =
     mconcat [ "kind" .= String "InputSetEmptyUTxO" ]
-  forMachine _dtal (FeeTooSmallUTxO minfee txfee) =
+  forMachine _dtal (ShelleyLedger.FeeTooSmallUTxO minfee txfee) =
     mconcat [ "kind" .= String "FeeTooSmallUTxO"
              , "minimum" .= minfee
              , "fee" .= txfee ]
-  forMachine _dtal (ValueNotConservedUTxO consumed produced) =
+  forMachine _dtal (ShelleyLedger.ValueNotConservedUTxO consumed produced) =
     mconcat [ "kind" .= String "ValueNotConservedUTxO"
              , "consumed" .= consumed
              , "produced" .= produced
              , "error" .= renderValueNotConservedErr consumed produced
              ]
-  forMachine dtal (UpdateFailure f) = forMachine dtal f
+  forMachine dtal (ShelleyLedger.UpdateFailure f) = forMachine dtal f
 
-  forMachine _dtal (WrongNetwork network addrs) =
+  forMachine _dtal (ShelleyLedger.WrongNetwork network addrs) =
     mconcat [ "kind" .= String "WrongNetwork"
              , "network" .= network
              , "addrs"   .= addrs
              ]
-  forMachine _dtal (WrongNetworkWithdrawal network addrs) =
+  forMachine _dtal (ShelleyLedger.WrongNetworkWithdrawal network addrs) =
     mconcat [ "kind" .= String "WrongNetworkWithdrawal"
              , "network" .= network
              , "addrs"   .= addrs
@@ -533,7 +531,7 @@ instance ( ShelleyBasedEra era
          , ToJSON (Core.TxOut era)
          , ToJSON MA.ValidityInterval
          , LogFormatting (PredicateFailure (Core.EraRule "PPUP" era))
-         ) => LogFormatting (MA.UtxoPredicateFailure era) where
+         ) => LogFormatting (MA.ShelleyMAUtxoPredFailure era) where
   forMachine _dtal (MA.BadInputsUTxO badInputs) =
     mconcat [ "kind" .= String "BadInputsUTxO"
              , "badInputs" .= badInputs
@@ -599,7 +597,7 @@ renderValueNotConservedErr :: Show val => val -> val -> Value
 renderValueNotConservedErr consumed produced = String $
     "This transaction consumed " <> show consumed <> " but produced " <> show produced
 
-instance Core.Crypto (Ledger.Crypto era) => LogFormatting (PpupPredicateFailure era) where
+instance Crypto.Crypto (Ledger.Crypto era) => LogFormatting (ShelleyPpupPredFailure era) where
   forMachine _dtal (NonGenesisUpdatePPUP proposalKeys genesisKeys) =
     mconcat [ "kind" .= String "NonGenesisUpdatePPUP"
              , "keys" .= proposalKeys Set.\\ genesisKeys ]
@@ -617,7 +615,7 @@ instance Core.Crypto (Ledger.Crypto era) => LogFormatting (PpupPredicateFailure 
 
 instance ( ShelleyBasedEra era
          , LogFormatting (PredicateFailure (Core.EraRule "DELPL" era))
-         ) => LogFormatting (DelegsPredicateFailure era) where
+         ) => LogFormatting (ShelleyDelegsPredFailure era) where
   forMachine _dtal (DelegateeNotRegisteredDELEG targetPool) =
     mconcat [ "kind" .= String "DelegateeNotRegisteredDELEG"
              , "targetPool" .= targetPool
@@ -632,12 +630,12 @@ instance ( ShelleyBasedEra era
 instance ( LogFormatting (PredicateFailure (Core.EraRule "POOL" era))
          , LogFormatting (PredicateFailure (Core.EraRule "DELEG" era))
          , Crypto.HashAlgorithm (Core.HASH (Ledger.Crypto era))
-         ) => LogFormatting (DelplPredicateFailure era) where
+         ) => LogFormatting (ShelleyDelplPredFailure era) where
   forMachine dtal (PoolFailure f)  = forMachine dtal f
   forMachine dtal (DelegFailure f) = forMachine dtal f
 
 instance     Crypto.HashAlgorithm (Core.HASH (Ledger.Crypto era))
-          => LogFormatting (DelegPredicateFailure era) where
+          => LogFormatting (ShelleyDelegPredFailure era) where
   forMachine _dtal (StakeKeyAlreadyRegisteredDELEG alreadyRegistered) =
     mconcat [ "kind" .= String "StakeKeyAlreadyRegisteredDELEG"
              , "credential" .= String (textShow alreadyRegistered)
@@ -716,7 +714,7 @@ instance     Crypto.HashAlgorithm (Core.HASH (Ledger.Crypto era))
              , "coin" .= coin
              ]
 
-instance LogFormatting (PoolPredicateFailure era) where
+instance LogFormatting (ShelleyPoolPredFailure era) where
   forMachine _dtal (StakePoolNotRegisteredOnKeyPOOL (KeyHash unregStakePool)) =
     mconcat [ "kind" .= String "StakePoolNotRegisteredOnKeyPOOL"
              , "unregisteredKeyHash" .= String (textShow unregStakePool)
@@ -769,7 +767,7 @@ instance LogFormatting (PoolPredicateFailure era) where
 
 instance ( LogFormatting (PredicateFailure (Core.EraRule "NEWEPOCH" era))
          , LogFormatting (PredicateFailure (Core.EraRule "RUPD" era))
-         ) => LogFormatting (TickPredicateFailure era) where
+         ) => LogFormatting (ShelleyTickPredFailure era) where
   forMachine dtal (NewEpochFailure f) = forMachine dtal f
   forMachine dtal (RupdFailure f)     = forMachine dtal f
 
@@ -778,7 +776,7 @@ instance LogFormatting TicknPredicateFailure where
 
 instance ( LogFormatting (PredicateFailure (Core.EraRule "EPOCH" era))
          , LogFormatting (PredicateFailure (Core.EraRule "MIR" era))
-         ) => LogFormatting (NewEpochPredicateFailure era) where
+         ) => LogFormatting (ShelleyNewEpochPredFailure era) where
   forMachine dtal (EpochFailure f) = forMachine dtal f
   forMachine dtal (MirFailure f) = forMachine dtal f
   forMachine _dtal (CorruptRewardUpdate update) =
@@ -789,21 +787,21 @@ instance ( LogFormatting (PredicateFailure (Core.EraRule "EPOCH" era))
 instance ( LogFormatting (PredicateFailure (Core.EraRule "POOLREAP" era))
          , LogFormatting (PredicateFailure (Core.EraRule "SNAP" era))
          , LogFormatting (PredicateFailure (Core.EraRule "UPEC" era))
-         ) => LogFormatting (EpochPredicateFailure era) where
+         ) => LogFormatting (ShelleyEpochPredFailure era) where
   forMachine dtal (PoolReapFailure f) = forMachine dtal f
   forMachine dtal (SnapFailure f)     = forMachine dtal f
   forMachine dtal (UpecFailure f)     = forMachine dtal f
 
 
-instance LogFormatting (PoolreapPredicateFailure era) where
+instance LogFormatting (ShelleyPoolreapPredFailure era) where
   forMachine _dtal x = case x of {} -- no constructors
 
 
-instance LogFormatting (SnapPredicateFailure era) where
+instance LogFormatting (ShelleySnapPredFailure era) where
   forMachine _dtal x = case x of {} -- no constructors
 
 -- TODO: Need to elaborate more on this error
-instance LogFormatting (NewppPredicateFailure era) where
+instance LogFormatting (ShelleyNewppPredFailure era) where
   forMachine _dtal (UnexpectedDepositPot outstandingDeposits depositPot) =
     mconcat [ "kind" .= String "UnexpectedDepositPot"
              , "outstandingDeposits" .= String (textShow outstandingDeposits)
@@ -811,20 +809,20 @@ instance LogFormatting (NewppPredicateFailure era) where
              ]
 
 
-instance LogFormatting (MirPredicateFailure era) where
+instance LogFormatting (ShelleyMirPredFailure era) where
   forMachine _dtal x = case x of {} -- no constructors
 
 
-instance LogFormatting (RupdPredicateFailure era) where
+instance LogFormatting (ShelleyRupdPredFailure era) where
   forMachine _dtal x = case x of {} -- no constructors
 
 
-instance Core.Crypto crypto => LogFormatting (PrtclPredicateFailure crypto) where
+instance Crypto.Crypto crypto => LogFormatting (PrtclPredicateFailure crypto) where
   forMachine  dtal (OverlayFailure f) = forMachine dtal f
   forMachine  dtal (UpdnFailure f)    = forMachine dtal f
 
 
-instance Core.Crypto crypto => LogFormatting (OverlayPredicateFailure crypto) where
+instance Crypto.Crypto crypto => LogFormatting (OverlayPredicateFailure crypto) where
   forMachine _dtal (UnknownGenesisKeyOVERLAY (KeyHash genKeyHash)) =
     mconcat [ "kind" .= String "UnknownGenesisKeyOVERLAY"
              , "unknownKeyHash" .= String (textShow genKeyHash)
@@ -921,7 +919,7 @@ instance LogFormatting (OcertPredicateFailure crypto) where
 instance LogFormatting (UpdnPredicateFailure crypto) where
   forMachine _dtal x = case x of {} -- no constructors
 
-instance LogFormatting (UpecPredicateFailure era) where
+instance LogFormatting (ShelleyUpecPredFailure era) where
   forMachine _dtal (NewPpFailure (UnexpectedDepositPot totalOutstanding depositPot)) =
     mconcat [ "kind" .= String "UnexpectedDepositPot"
              , "totalOutstanding" .=  String (textShow totalOutstanding)
@@ -937,7 +935,7 @@ instance ( Ledger.Era era
          , ToJSON (Ledger.TxOut era)
          , Show (Ledger.Value era)
          , LogFormatting (PredicateFailure (Ledger.EraRule "UTXOS" era))
-         ) => LogFormatting (Alonzo.UtxoPredicateFailure era) where
+         ) => LogFormatting (Alonzo.AlonzoUtxoPredFailure era) where
   forMachine _dtal (Alonzo.BadInputsUTxO badInputs) =
     mconcat [ "kind" .= String "BadInputsUTxO"
              , "badInputs" .= badInputs
@@ -1033,7 +1031,7 @@ instance ( Ledger.Era era
 
 instance ( ToJSON (Alonzo.CollectError (Ledger.Crypto era))
          , LogFormatting (PredicateFailure (Ledger.EraRule "PPUP" era))
-         ) => LogFormatting (Alonzo.UtxosPredicateFailure era) where
+         ) => LogFormatting (Alonzo.AlonzoUtxosPredFailure era) where
   forMachine _ (Alonzo.ValidationTagMismatch isValidating reason) =
     mconcat [ "kind" .= String "ValidationTagMismatch"
              , "isvalidating" .= isValidating
@@ -1048,7 +1046,7 @@ instance ( ToJSON (Alonzo.CollectError (Ledger.Crypto era))
 
 instance ( Ledger.Era era
          , Show (PredicateFailure (Ledger.EraRule "LEDGERS" era))
-         ) => LogFormatting (AlonzoBbodyPredFail era) where
+         ) => LogFormatting (AlonzoBbodyPredFailure era) where
   forMachine _ err = mconcat [ "kind" .= String "AlonzoBbodyPredFail"
                             , "error" .= String (show err)
                             ]
@@ -1058,12 +1056,12 @@ instance ( Ledger.Era era
 
 
 instance ( Ledger.Era era
-         , LogFormatting (Alonzo.UtxoPredicateFailure era)
+         , LogFormatting (Alonzo.AlonzoUtxoPredFailure era)
          , ToJSON (Ledger.TxOut era)
-         ) => LogFormatting (Babbage.BabbageUtxoPred era) where
+         ) => LogFormatting (Babbage.BabbageUtxoPredFailure era) where
   forMachine v err =
     case err of
-      Babbage.FromAlonzoUtxoFail alonzoFail ->
+      Babbage.AlonzoInBabbageUtxoPredFailure alonzoFail ->
         forMachine v alonzoFail
 
       Babbage.IncorrectTotalCollateralField provided declared ->
@@ -1082,13 +1080,13 @@ instance ( Ledger.Era era
          , Ledger.Crypto era ~ StandardCrypto
          , ToJSON (Ledger.Value era)
          , ToJSON (Ledger.TxOut era)
-         , LogFormatting (UtxowPredicateFailure era)
+         , LogFormatting (ShelleyUtxowPredFailure era)
          , LogFormatting (PredicateFailure (Ledger.EraRule "PPUP" era))
          , LogFormatting (PredicateFailure (Ledger.EraRule "UTXO" era))
-         ) => LogFormatting (Babbage.BabbageUtxowPred era) where
+         ) => LogFormatting (Babbage.BabbageUtxowPredFailure era) where
   forMachine v err =
     case err of
-      Babbage.FromAlonzoUtxowFail alonzoFail ->
+      Babbage.AlonzoInBabbageUtxowPredFailure alonzoFail ->
         forMachine v alonzoFail
       Babbage.UtxoFailure utxoFail ->
         forMachine v utxoFail
@@ -1102,7 +1100,7 @@ instance ( Ledger.Era era
                 , "scripts" .= s
                 ]
 
-instance Core.Crypto crypto => LogFormatting (Praos.PraosValidationErr crypto) where
+instance Crypto.Crypto crypto => LogFormatting (Praos.PraosValidationErr crypto) where
   forMachine _ err' =
     case err' of
       Praos.VRFKeyUnknown unknownKeyHash ->
