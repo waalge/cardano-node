@@ -19,8 +19,8 @@ module Cardano.Benchmarking.GeneratorTx.Tx
   )
 where
 
-import           Prelude
 import           Cardano.Benchmarking.Types (TxAdditionalSize (..))
+import           Prelude
 
 import           Cardano.Api
 
@@ -82,6 +82,7 @@ mkGenesisTransaction key _payloadSize ttl fee txins txouts
     ShelleyBasedEraMary    -> TxValidityUpperBound ValidityUpperBoundInMaryEra ttl
     ShelleyBasedEraAlonzo  -> TxValidityUpperBound ValidityUpperBoundInAlonzoEra ttl
     ShelleyBasedEraBabbage -> TxValidityUpperBound ValidityUpperBoundInBabbageEra ttl
+    ShelleyBasedEraConway  -> TxValidityUpperBound ValidityUpperBoundInConwayEra ttl
 
 mkFee :: forall era .
      IsShelleyBasedEra era

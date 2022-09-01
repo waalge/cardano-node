@@ -61,6 +61,7 @@ assumeMapCosts _proxy = stepFunction [
       ShelleyBasedEraMary    -> 39
       ShelleyBasedEraAlonzo  -> 42
       ShelleyBasedEraBabbage -> 42
+      ShelleyBasedEraConway  -> error "Conway magic number for ShelleyBasedEraConway"
 
 -- Bytestring costs are not LINEAR !!
 -- Costs are piecewise linear for payload sizes [0..23] and [24..64].
@@ -147,6 +148,7 @@ mkMetadata size
     ShelleyBasedEraMary    -> 39
     ShelleyBasedEraAlonzo  -> 39 -- TODO: check minSize for Alonzo
     ShelleyBasedEraBabbage -> 39 -- TODO: check minSize for Babbage
+    ShelleyBasedEraConway  -> error "Conway magic number for ShelleyBasedEraConway"
   nettoSize = size - minSize
 
   -- At 24 the CBOR representation changes.
