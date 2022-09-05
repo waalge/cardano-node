@@ -17,7 +17,7 @@ library
                       Cardano.Logging.Types
                       Cardano.Logging.Trace
                       Cardano.Logging.Configuration
-                      Cardano.Logging.ConfigurationParser                      
+                      Cardano.Logging.ConfigurationParser
                       Cardano.Logging.DocuGenerator
                       Cardano.Logging.Formatter
                       Cardano.Logging.Forwarding
@@ -34,89 +34,89 @@ library
 
   default-language:   Haskell2010
   default-extensions: OverloadedStrings
-  build-depends:      base >=4.12 && <5
-                      , aeson                         >= 2.1.0.0
-                      , async
-                      , bytestring
-                      , cborg
-                      , containers
-                      , contra-tracer
-                      , ekg
-                      , ekg-core
-                      , ekg-forward
-                      , hostname
-                      , network
-                      , optparse-applicative-fork
-                      , ouroboros-network
-                      , ouroboros-network-framework
-                      , serialise
-                      , stm
-                      , text
-                      , time
-                      , trace-forward
-                      , unagi-chan >= 0.4.1.4
-                      , unliftio
-                      , unliftio-core
-                      , unordered-containers
-                      , yaml
+  build-depends:      base                        >= 4.12      && <5
+                    , aeson                       >= 2.1.0.0   && <2.2
+                    , async                       >= 2.2.4     && <2.3
+                    , bytestring                  >= 0.10.12.0 && <0.11
+                    , cborg                       >= 0.2.7.0   && <0.3
+                    , containers                  >= 0.6.5.1   && <0.7
+                    , contra-tracer               >= 0.1.0.0   && <0.2
+                    , ekg                         >= 0.4.0.15  && <0.5
+                    , ekg-core                    >= 0.1.1.7   && <0.2
+                    , ekg-forward                 >= 0.1.0     && <0.2
+                    , hostname                    >= 1.0       && <1.1
+                    , network                     >= 3.1.2.7   && <3.2
+                    , optparse-applicative-fork   >= 0.16.1.0  && <0.17
+                    , ouroboros-network           >= 0.1.0.0   && <0.2
+                    , ouroboros-network-framework >= 0.1.0.0   && <0.2
+                    , serialise                   >= 0.2.5.0   && <0.3
+                    , stm                         >= 2.5.0.1   && <2.6
+                    , text                        >= 1.2.4.1   && <1.3
+                    , time                        >= 1.9.3     && <1.10
+                    , trace-forward
+                    , unagi-chan                  >= 0.4.1.4   && <0.5
+                    , unliftio                    >= 0.2.22.0  && <0.3
+                    , unliftio-core               >= 0.2.0.1   && <0.3
+                    , unordered-containers        >= 0.2.19.1  && <0.3
+                    , yaml                        >= 0.11.8.0  && <0.12
 
   if os(windows)
-     build-depends:    Win32
+     build-depends:   Win32
   else
-     build-depends:    unix
+     build-depends:   unix
 
-  ghc-options:         -Wall
-                       -Wcompat
-                       -Wincomplete-uni-patterns
-                       -Wincomplete-record-updates
-                       -Wpartial-fields
-                       -Widentities
-                       -Wredundant-constraints
-                       -Wmissing-export-lists
-                       -Wno-incomplete-patterns
+  ghc-options:        -Wall
+                      -Wcompat
+                      -Wincomplete-uni-patterns
+                      -Wincomplete-record-updates
+                      -Wpartial-fields
+                      -Widentities
+                      -Wredundant-constraints
+                      -Wmissing-export-lists
+                      -Wno-incomplete-patterns
 
 
 executable trace-dispatcher-examples
-    main-is:          Main.hs
-    other-modules:    Examples.TestObjects
-                      Examples.Aggregation
-                      Examples.Trivial
-                      Examples.Routing
-                      Examples.EKG
-                      Examples.Configuration
-                      Examples.DataPoint
-                      Examples.FrequencyLimiting
-                      Examples.Documentation
-    hs-source-dirs:   examples
-    default-language: Haskell2010
+    main-is:             Main.hs
+    other-modules:       Examples.TestObjects
+                         Examples.Aggregation
+                         Examples.Trivial
+                         Examples.Routing
+                         Examples.EKG
+                         Examples.Configuration
+                         Examples.DataPoint
+                         Examples.FrequencyLimiting
+                         Examples.Documentation
+    hs-source-dirs:      examples
+    default-language:    Haskell2010
     default-extensions:  OverloadedStrings
-    build-depends:    base >=4.12 && <5
-                      , aeson                         >= 2.1.0.0
-                      , bytestring
-                      , containers
-                      , ekg
-                      , ekg-core
-                      , hostname
-                      , stm
-                      , text
-                      , trace-dispatcher
-                      , trace-forward
-                      , time
-                      , unagi-chan >= 0.4.1.4
-                      , unliftio
-                      , unliftio-core
-                      , unordered-containers
-                      , utf8-string
-                      , yaml
-  ghc-options:         -Wall
-                       -Wcompat
-                       -Wincomplete-uni-patterns
-                       -Wincomplete-record-updates
-                       -Wpartial-fields
-                       -Widentities
-                       -Wredundant-constraints
-                       -Wmissing-export-lists
-                       -Wno-incomplete-patterns
+    build-depends:       base       >= 4.12 && <5
+                       , aeson      >= 2.1.0.0
+                       , bytestring
+                       , containers
+                       , ekg
+                       , ekg-core
+                       , hostname
+                       , stm
+                       , text
+                       , trace-dispatcher
+                       , trace-forward
+                       , time
+                       , unagi-chan >= 0.4.1.4
+                       , unliftio
+                       , unliftio-core
+                       , unordered-containers
+                       , utf8-string
+                       , yaml
+  ghc-options:           -Wall
+                         -Wcompat
+                         -Wincomplete-uni-patterns
+                         -Wincomplete-record-updates
+                         -Wpartial-fields
+                         -Widentities
+                         -Wredundant-constraints
+                         -Wmissing-export-lists
+                         -Wno-incomplete-patterns
 
 test-suite trace-dispatcher-test
   type:                exitcode-stdio-1.0
@@ -130,25 +130,25 @@ test-suite trace-dispatcher-test
                        Cardano.Logging.Test.Script
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
-  build-depends:       base >=4.12 && <5
-                      , aeson                         >= 2.1.0.0
-                      , bytestring
-                      , containers
-                      , ekg
-                      , ekg-core
-                      , hostname
-                      , text
-                      , stm
-                      , tasty
-                      , tasty-quickcheck
-                      , time
-                      , trace-dispatcher
-                      , unagi-chan >= 0.4.1.4
-                      , unliftio
-                      , unliftio-core
-                      , unordered-containers
-                      , yaml
-                      , QuickCheck
+  build-depends:       base       >= 4.12 && <5
+                     , aeson      >= 2.1.0.0
+                     , bytestring
+                     , containers
+                     , ekg
+                     , ekg-core
+                     , hostname
+                     , text
+                     , stm
+                     , tasty
+                     , tasty-quickcheck
+                     , time
+                     , trace-dispatcher
+                     , unagi-chan >= 0.4.1.4
+                     , unliftio
+                     , unliftio-core
+                     , unordered-containers
+                     , yaml
+                     , QuickCheck
 
   ghc-options:         -Wall
                        -Wcompat
@@ -172,12 +172,12 @@ benchmark trace-dispatcher-bench
                        Cardano.Logging.Test.Tracer
                        Cardano.Logging.Test.Messages
                        Cardano.Logging.Test.Script
-  build-depends:       base >=4.12 && <5
-                       , aeson                         >= 2.1.0.0
-                       , containers
-                       , criterion
-                       , ekg
-                       , text
-                       , time
-                       , trace-dispatcher
-                       , QuickCheck
+  build-depends:       base  >= 4.12 && <5
+                     , aeson >= 2.1.0.0
+                     , containers
+                     , criterion
+                     , ekg
+                     , text
+                     , time
+                     , trace-dispatcher
+                     , QuickCheck

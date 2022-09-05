@@ -19,37 +19,37 @@ library
 
   default-language:   Haskell2010
   default-extensions: OverloadedStrings
-  build-depends:      base >=4.12 && <5
-                      , trace-dispatcher
-                      , text
-                      , aeson                         >= 2.1.0.0
+  build-depends:      base  >= 4.12    && <5
+                    , trace-dispatcher
+                    , text  >= 1.2.4.1 && <1.3
+                    , aeson >= 2.1.0.0 && <2.2
 
   if os(windows)
-     build-depends:    Win32
+     build-depends:   Win32
   else
-     build-depends:    unix
+     build-depends:   unix
 
-  ghc-options:         -Wall
-                       -Wcompat
-                       -Wincomplete-uni-patterns
-                       -Wincomplete-record-updates
-                       -Wpartial-fields
-                       -Widentities
-                       -Wredundant-constraints
-                       -Wmissing-export-lists
-                       -Wno-incomplete-patterns
+  ghc-options:        -Wall
+                      -Wcompat
+                      -Wincomplete-uni-patterns
+                      -Wincomplete-record-updates
+                      -Wpartial-fields
+                      -Widentities
+                      -Wredundant-constraints
+                      -Wmissing-export-lists
+                      -Wno-incomplete-patterns
 
   if os(linux)
-    exposed-modules:   Cardano.Logging.Resources.Linux
+    exposed-modules:  Cardano.Logging.Resources.Linux
   if os(windows)
-    exposed-modules:   Cardano.Logging.Resources.Windows
-    c-sources:         cbits/os-support-win.c
-    include-dirs:      include/
-    cc-options:        -DPSAPI_VERSION=2
+    exposed-modules:  Cardano.Logging.Resources.Windows
+    c-sources:        cbits/os-support-win.c
+    include-dirs:     include/
+    cc-options:       -DPSAPI_VERSION=2
   if os(darwin)
-    exposed-modules:   Cardano.Logging.Resources.Darwin
-    c-sources:         cbits/os-support-darwin.c
-    include-dirs:      include/
+    exposed-modules:  Cardano.Logging.Resources.Darwin
+    c-sources:        cbits/os-support-darwin.c
+    include-dirs:     include/
 
 test-suite trace-resources-test
   type:                exitcode-stdio-1.0
@@ -57,14 +57,14 @@ test-suite trace-resources-test
   main-is:             trace-resources-test.hs
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
-  build-depends:       base >=4.12 && <5
-                      , trace-dispatcher
-                      , text
-                      , aeson                         >= 2.1.0.0
-                      , QuickCheck
-                      , tasty
-                      , tasty-quickcheck
-                      , trace-resources
+  build-depends:       base  >= 4.12 && <5
+                     , trace-dispatcher
+                     , text
+                     , aeson >= 2.1.0.0
+                     , QuickCheck
+                     , tasty
+                     , tasty-quickcheck
+                     , trace-resources
   ghc-options:        "-with-rtsopts=-T"
                        -Wall
                        -Wcompat

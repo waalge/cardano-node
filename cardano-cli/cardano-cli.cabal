@@ -95,61 +95,61 @@ library
 
   other-modules:        Paths_cardano_cli
 
-  build-depends:        aeson             >= 1.5.6.0
-                      , aeson-pretty      >= 0.8.5
-                      , ansi-terminal
-                      , attoparsec
-                      , bech32            >= 1.1.0
-                      , binary
-                      , bytestring
-                      , base16-bytestring >= 1.0
-                      , canonical-json
+  build-depends:        aeson                        >= 1.5.6.0   && <2.2
+                      , aeson-pretty                 >= 0.8.5     && <0.9
+                      , ansi-terminal                >= 0.11.3    && <0.12
+                      , attoparsec                   >= 0.14.4    && <0.15
+                      , bech32                       >= 1.1.0     && <1.2
+                      , binary                       >= 0.8.8.0   && <0.9
+                      , bytestring                   >= 0.10.12.0 && <0.11
+                      , base16-bytestring            >= 1.0       && <1.1
+                      , canonical-json               >= 0.6.0.0   && <0.7
                       , cardano-api
-                      , cardano-binary
+                      , cardano-binary               >= 1.5.0     && <1.6
                       , cardano-git-rev
-                      , cardano-crypto
-                      , cardano-crypto-class
-                      , cardano-crypto-wrapper
-                      , cardano-data
-                      , cardano-ledger-alonzo
-                      , cardano-ledger-byron
-                      , cardano-ledger-core
-                      , cardano-ledger-shelley-ma
-                      , cardano-prelude
-                      , cardano-protocol-tpraos
-                      , cardano-slotting
-                      , vector-map
-                      , contra-tracer
-                      , cborg >= 0.2.4 && < 0.3
-                      , containers
-                      , cryptonite
-                      , directory
-                      , filepath
-                      , formatting
-                      , iproute
-                      , network
-                      , optparse-applicative-fork
-                      , ouroboros-consensus
-                      , ouroboros-consensus-byron
-                      , ouroboros-consensus-cardano
-                      , ouroboros-consensus-protocol
-                      , ouroboros-consensus-shelley
-                      , ouroboros-network
-                      , parsec
-                      , prettyprinter
-                      , random
-                      , cardano-ledger-shelley
-                      , set-algebra
-                      , split
-                      , strict-containers
-                      , text
-                      , time
-                      , transformers
-                      , transformers-except
-                      , unliftio-core
-                      , utf8-string
-                      , vector
-                      , yaml
+                      , cardano-crypto               >= 1.1.0     && <1.2
+                      , cardano-crypto-class         >= 2.0.0     && <2.1
+                      , cardano-crypto-wrapper       >= 1.3.0     && <1.4
+                      , cardano-data                 >= 0.1.0.0   && <0.2
+                      , cardano-ledger-alonzo        >= 0.1.0.0   && <0.2
+                      , cardano-ledger-byron         >= 0.1.0.0   && <0.2
+                      , cardano-ledger-core          >= 0.1.0.0   && <0.2
+                      , cardano-ledger-shelley-ma    >= 0.1.0.0   && <0.2
+                      , cardano-prelude              >= 0.1.0.0   && <0.2
+                      , cardano-protocol-tpraos      >= 0.1.0.0   && <0.2
+                      , cardano-slotting             >= 0.1.0.0   && <0.2
+                      , vector-map                   >= 0.1.0.0   && <0.2
+                      , contra-tracer                >= 0.1.0.0   && <0.2
+                      , cborg                        >= 0.2.4     && <0.3
+                      , containers                   >= 0.6.5.1   && <0.7
+                      , cryptonite                   >= 0.27      && <0.28
+                      , directory                    >= 1.3.6.0   && <1.4
+                      , filepath                     >= 1.4.2.1   && <1.5
+                      , formatting                   >= 6.3.7     && <6.4
+                      , iproute                      >= 1.7.12    && <1.8
+                      , network                      >= 3.1.2.7   && <3.2
+                      , optparse-applicative-fork    >= 0.16.1.0  && <0.17
+                      , ouroboros-consensus          >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-byron    >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-cardano  >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-protocol >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-shelley  >= 0.1.0.0   && <0.2
+                      , ouroboros-network            >= 0.1.0.0   && <0.2
+                      , parsec                       >= 3.1.14.0  && <3.2
+                      , prettyprinter                >= 1.7.1     && <1.8
+                      , random                       >= 1.2.1.1   && <1.3
+                      , cardano-ledger-shelley       >= 0.1.0.0   && <0.2
+                      , set-algebra                  >= 0.1.0.0   && <0.2
+                      , split                        >= 0.2.3.4   && <0.3
+                      , strict-containers            >= 0.1.0.0   && <0.2
+                      , text                         >= 1.2.4.1   && <1.3
+                      , time                         >= 1.9.3     && <1.10
+                      , transformers                 >= 0.5.6.2   && <0.6
+                      , transformers-except          >= 0.1.2     && <0.2
+                      , unliftio-core                >= 0.2.0.1   && <0.3
+                      , utf8-string                  >= 1.0.2     && <1.1
+                      , vector                       >= 0.12.3.1  && <0.13
+                      , yaml                         >= 0.11.8.0  && <0.12
 
 executable cardano-cli
   import:               base, project-config

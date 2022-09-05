@@ -11,7 +11,8 @@ license-files:          LICENSE
 build-type:             Simple
 extra-source-files:     README.md, ChangeLog.md
 
-common base                         { build-depends: base                             >= 4.14       && < 4.15     }
+common base
+  build-depends:        base >= 4.14 && < 4.15
 
 common project-config
   default-language:     Haskell2010
@@ -96,68 +97,67 @@ library
                         Cardano.Api.Value
                         Cardano.Api.ValueParser
 
-  build-depends:        aeson             >= 1.5.6.0
-                      , aeson-pretty      >= 0.8.5
-                      , attoparsec
-                      , array
-                      , base16-bytestring >= 1.0
-                      , base58-bytestring
-                      , bech32 >= 1.1.0
-                      , bytestring
-                      , cardano-binary
-                      , cardano-crypto
-                      , cardano-crypto-class
-                      , cardano-crypto-wrapper
-                      , cardano-data
-                      , cardano-ledger-alonzo
-                      , cardano-ledger-babbage
-                      , cardano-ledger-byron
-                      , cardano-ledger-core
-                      , cardano-ledger-shelley-ma
-                      , cardano-prelude
-                      , cardano-protocol-tpraos
-                      , cardano-slotting
-                      , cborg
-                      , contra-tracer
-                      , containers
-                      , cryptonite
-                      , deepseq
-                      , directory
-                      , filepath
-                      , formatting
-                      , iproute
-                      , memory
-                      , network
-                      , nothunks
-                      , optparse-applicative-fork
-                      , ouroboros-consensus
-                      , ouroboros-consensus-byron
-                      , ouroboros-consensus-cardano
-                      , ouroboros-consensus-protocol
-                      , ouroboros-consensus-shelley
-                      , ouroboros-network
-                      , ouroboros-network-framework
-                      , parsec
-                      , plutus-ledger-api
-                      , prettyprinter
-                      , prettyprinter-configurable
-                      , random
-                      , scientific
-                      , serialise
-                      , small-steps
-                      , cardano-ledger-shelley
-                      , small-steps
-                      , stm
-                      , strict-containers
-                      , text
-                      , time
-                      , transformers
-                      , transformers-except
-                      , typed-protocols
-                      , unordered-containers >= 0.2.11
-                      , vector
-                      , vector-map
-                      , yaml
+  build-depends:        aeson                        >= 1.5.6.0   && <2.2
+                      , aeson-pretty                 >= 0.8.5     && <0.9
+                      , attoparsec                   >= 0.14.4    && <0.15
+                      , array                        >= 0.5.4.0   && <0.6
+                      , base16-bytestring            >= 1.0       && <1.1
+                      , base58-bytestring            >= 0.1.0     && <0.2
+                      , bech32                       >= 1.1.0     && <1.2
+                      , bytestring                   >= 0.10.12.0 && <0.11
+                      , cardano-binary               >= 1.5.0     && <1.6
+                      , cardano-crypto               >= 1.1.0     && <1.2
+                      , cardano-crypto-class         >= 2.0.0     && <2.1
+                      , cardano-crypto-wrapper       >= 1.3.0     && <1.4
+                      , cardano-data                 >= 0.1.0.0   && <0.2
+                      , cardano-ledger-alonzo        >= 0.1.0.0   && <0.2
+                      , cardano-ledger-babbage       >= 0.1.0.0   && <0.2
+                      , cardano-ledger-byron         >= 0.1.0.0   && <0.2
+                      , cardano-ledger-core          >= 0.1.0.0   && <0.2
+                      , cardano-ledger-shelley-ma    >= 0.1.0.0   && <0.2
+                      , cardano-prelude              >= 0.1.0.0   && <0.2
+                      , cardano-protocol-tpraos      >= 0.1.0.0   && <0.2
+                      , cardano-slotting             >= 0.1.0.0   && <0.2
+                      , cborg                        >= 0.2.7.0   && <0.3
+                      , contra-tracer                >= 0.1.0.0   && <0.2
+                      , containers                   >= 0.6.5.1   && <0.7
+                      , cryptonite                   >= 0.27      && <0.28
+                      , deepseq                      >= 1.4.4.0   && <1.5
+                      , directory                    >= 1.3.6.0   && <1.4
+                      , filepath                     >= 1.4.2.1   && <1.5
+                      , formatting                   >= 6.3.7     && <6.4
+                      , iproute                      >= 1.7.12    && <1.8
+                      , memory                       >= 0.17.0    && <0.18
+                      , network                      >= 3.1.2.7   && <3.2
+                      , nothunks                     >= 0.1.3     && <0.2
+                      , optparse-applicative-fork    >= 0.16.1.0  && <0.17
+                      , ouroboros-consensus          >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-byron    >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-cardano  >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-protocol >= 0.1.0.0   && <0.2
+                      , ouroboros-consensus-shelley  >= 0.1.0.0   && <0.2
+                      , ouroboros-network            >= 0.1.0.0   && <0.2
+                      , ouroboros-network-framework  >= 0.1.0.0   && <0.2
+                      , parsec                       >= 3.1.14.0  && <3.2
+                      , plutus-ledger-api            >= 1.0.0.0   && <1.1
+                      , prettyprinter                >= 1.7.1     && <1.8
+                      , prettyprinter-configurable   >= 0.1.0.0   && <0.2
+                      , random                       >= 1.2.1.1   && <1.3
+                      , scientific                   >= 0.3.7.0   && <0.4
+                      , serialise                    >= 0.2.5.0   && <0.3
+                      , small-steps                  >= 0.1.0.0   && <0.2
+                      , cardano-ledger-shelley       >= 0.1.0.0   && <0.2
+                      , stm                          >= 2.5.0.1   && <2.6
+                      , strict-containers            >= 0.1.0.0   && <0.2
+                      , text                         >= 1.2.4.1   && <1.3
+                      , time                         >= 1.9.3     && <1.10
+                      , transformers                 >= 0.5.6.2   && <0.6
+                      , transformers-except          >= 0.1.2     && <0.2
+                      , typed-protocols              >= 0.1.0.0   && <0.2
+                      , unordered-containers         >= 0.2.11    && <0.3
+                      , vector                       >= 0.12.3.1  && <0.13
+                      , vector-map                   >= 0.1.0.0   && <0.2
+                      , yaml                         >= 0.11.8.0  && <0.12
 
 library gen
   import:               base, project-config
@@ -173,22 +173,22 @@ library gen
                         Gen.Hedgehog.Roundtrip.Bech32
                         Gen.Hedgehog.Roundtrip.CBOR
 
-  build-depends:        aeson             >= 1.5.6.0
-                      , base16-bytestring
-                      , bytestring
+  build-depends:        aeson                     >= 1.5.6.0   && <2.2
+                      , base16-bytestring         >= 1.0.2.0   && <1.1
+                      , bytestring                >= 0.10.12.0 && <0.11
                       , cardano-api
-                      , cardano-binary
-                      , cardano-crypto-class
-                      , cardano-crypto-test
-                      , cardano-ledger-alonzo
-                      , cardano-ledger-byron-test
-                      , cardano-ledger-core
-                      , cardano-prelude
-                      , containers
-                      , hedgehog
-                      , plutus-core
-                      , cardano-ledger-shelley
-                      , text
+                      , cardano-binary            >= 1.5.0     && <1.6
+                      , cardano-crypto-class      >= 2.0.0     && <2.1
+                      , cardano-crypto-test       >= 1.3.0     && <1.4
+                      , cardano-ledger-alonzo     >= 0.1.0.0   && <0.2
+                      , cardano-ledger-byron-test >= 1.3.0     && <1.4
+                      , cardano-ledger-core       >= 0.1.0.0   && <0.2
+                      , cardano-prelude           >= 0.1.0.0   && <0.2
+                      , containers                >= 0.6.5.1   && <0.7
+                      , hedgehog                  >= 1.1.1     && <1.2
+                      , plutus-core               >= 1.0.0.0   && <1.1
+                      , cardano-ledger-shelley    >= 0.1.0.0   && <0.2
+                      , text                      >= 1.2.4.1   && <1.3
 
 test-suite cardano-api-test
   import:               base, project-config
