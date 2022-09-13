@@ -47,6 +47,7 @@ import qualified Cardano.Binary as CBOR
 import           Cardano.Ledger.Shelley.Scripts ()
 
 import           Cardano.CLI.Environment (EnvSocketError, readEnvSocketPath, renderEnvSocketError)
+import           Cardano.CLI.Helpers (printWarning)
 import           Cardano.CLI.Run.Friendly (friendlyTxBS, friendlyTxBodyBS)
 import           Cardano.CLI.Shelley.Key (InputDecodeError, readSigningKeyFileAnyOf)
 import           Cardano.CLI.Shelley.Output
@@ -498,6 +499,9 @@ runTxBuild (AnyCardanoEra era) (AnyConsensusModeParams cModeParams) networkId mS
            txins readOnlyRefIns txinsc mReturnCollateral mtotcoll txouts (TxOutChangeAddress changeAddr) mValue mLowerBound mUpperBound
            certFiles withdrawals reqSigners metadataSchema scriptFiles metadataFiles mpparams
            mUpdatePropFile outputFormat mOverrideWits outputOptions = do
+  liftIO $ forM_ mpparams $ \_ ->
+    printWarning "'--protocol-params-file' for 'transaction build' is deprecated"
+
   SocketPath sockPath <- firstExceptT ShelleyTxCmdSocketEnvError readEnvSocketPath
   let localNodeConnInfo = LocalNodeConnectInfo cModeParams networkId sockPath
       consensusMode = consensusModeOnly cModeParams
@@ -508,26 +512,6 @@ runTxBuild (AnyCardanoEra era) (AnyConsensusModeParams cModeParams) networkId mS
 
   case (consensusMode, cardanoEraStyle era) of
     (CardanoMode, ShelleyBasedEra _sbe) -> do
-      txBodyContent <-
-        TxBodyContent
-          <$> validateTxIns               era txins
-          <*> validateTxInsCollateral     era txinsc
-          <*> validateTxInsReference      era allReferenceInputs
-          <*> validateTxOuts              era txouts
-          <*> validateTxTotalCollateral   era mtotcoll
-          <*> validateTxReturnCollateral  era mReturnCollateral
-          <*> validateTxFee               era dummyFee
-          <*> ((,) <$> validateTxValidityLowerBound era mLowerBound
-                   <*> validateTxValidityUpperBound era mUpperBound)
-          <*> validateTxMetadataInEra     era metadataSchema metadataFiles
-          <*> validateTxAuxScripts        era scriptFiles
-          <*> validateRequiredSigners     era reqSigners
-          <*> validateProtocolParameters  era mpparams
-          <*> validateTxWithdrawals       era withdrawals
-          <*> validateTxCertificates      era certFiles
-          <*> validateTxUpdateProposal    era mUpdatePropFile
-          <*> validateTxMintValue         era mValue
-          <*> validateTxScriptValidity    era mScriptValidity
       eInMode <- case toEraInMode era CardanoMode of
                    Just result -> return result
                    Nothing ->
@@ -563,6 +547,27 @@ runTxBuild (AnyCardanoEra era) (AnyConsensusModeParams cModeParams) networkId mS
 
                 return (utxo, pparams, eraHistory, systemStart, stakePools)
           Nothing -> left $ ShelleyTxCmdEraConsensusModeMismatch Nothing (AnyConsensusMode consensusMode) qAnyE
+
+      txBodyContent <-
+        TxBodyContent
+          <$> validateTxIns               era txins
+          <*> validateTxInsCollateral     era txinsc
+          <*> validateTxInsReference      era allReferenceInputs
+          <*> validateTxOuts              era txouts
+          <*> validateTxTotalCollateral   era mtotcoll
+          <*> validateTxReturnCollateral  era mReturnCollateral
+          <*> validateTxFee               era dummyFee
+          <*> ((,) <$> validateTxValidityLowerBound era mLowerBound
+                   <*> validateTxValidityUpperBound era mUpperBound)
+          <*> validateTxMetadataInEra     era metadataSchema metadataFiles
+          <*> validateTxAuxScripts        era scriptFiles
+          <*> validateRequiredSigners     era reqSigners
+          <*> (pure $ BuildTxWith $ Just pparams)
+          <*> validateTxWithdrawals       era withdrawals
+          <*> validateTxCertificates      era certFiles
+          <*> validateTxUpdateProposal    era mUpdatePropFile
+          <*> validateTxMintValue         era mValue
+          <*> validateTxScriptValidity    era mScriptValidity
 
       let cAddr = case anyAddressInEra era changeAddr of
                     Just addr -> addr
