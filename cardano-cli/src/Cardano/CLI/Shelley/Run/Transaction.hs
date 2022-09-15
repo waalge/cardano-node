@@ -625,6 +625,20 @@ readScriptWitnessFiles era = mapM readSwitFile
       return (tIn, Just sWit)
   readSwitFile (tIn, Nothing) = return (tIn, Nothing)
 
+readScriptWitnessFiles
+  :: CardanoEra era
+  -> [(TxIn, Maybe (ScriptWitnessFiles WitCtxTxIn))]
+  -> ExceptT ShelleyTxCmdError IO [(TxIn, Maybe (ScriptWitness WitCtxTxIn era))]
+readScriptWitnessFiles _ [] = return []
+readScriptWitnessFiles era ((txin, mScriptWitnessFiles) : rest) = do
+  case  mScriptWitnessFiles of
+    Nothing -> do
+      remaining <- readScriptWitnessFiles era rest
+      return $ (txin, Nothing) : remaining
+    Just sWitFile -> do
+      sWit <- createScriptWitness era sWitFile
+      remaining <- readScriptWitnessFiles era rest
+      return $ (txin, Just sWit) : remaining
 
 validateTxInsCollateral :: CardanoEra era
                         -> [TxIn]
