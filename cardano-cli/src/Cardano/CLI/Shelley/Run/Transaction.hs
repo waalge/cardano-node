@@ -18,7 +18,7 @@ module Cardano.CLI.Shelley.Run.Transaction
   ) where
 
 import           Cardano.Prelude hiding (All, Any)
-import           Prelude (String, error)
+import           Prelude (String, error, id)
 
 import           Control.Monad.Trans.Except.Extra (firstExceptT, handleIOExceptT, handleLeftT,
                    hoistEither, hoistMaybe, left, newExceptT)
@@ -26,6 +26,7 @@ import qualified Data.Aeson as Aeson
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -364,6 +365,8 @@ runTxBuildRaw (AnyCardanoEra era)
     allReferenceInputs
       <- getAllReferenceInputs era inputsAndScriptFiles mValue certFiles withdrawals readOnlyRefIns
     inputsAndMaybeScriptWits <- readScriptWitnessFiles era inputsAndScriptFiles
+    valuesWithScriptWits <- readValueScriptWitnesses era $ maybe (mempty, []) id mValue
+
     validatedCollateralTxIns <- validateTxInsCollateral era txinsc
     validatedRefInputs <- validateTxInsReference era allReferenceInputs
     validatedTxOuts <- validateTxOuts era txouts
@@ -379,7 +382,7 @@ runTxBuildRaw (AnyCardanoEra era)
     validatedTxWtdrwls <- validateTxWithdrawals era withdrawals
     validatedTxCerts <- validateTxCertificates era certFiles
     validatedTxUpProp <- validateTxUpdateProposal era mUpdatePropFile
-    validatedMintValue <- validateTxMintValue era mValue
+    validatedMintValue <- hoistEither $ validateTxMintValue era valuesWithScriptWits
     validatedTxScriptValidity <- validateTxScriptValidity era mScriptValidity
 
     let txBodyContent = TxBodyContent
@@ -461,8 +464,14 @@ runTxBuild (AnyCardanoEra era) (AnyConsensusModeParams cModeParams) networkId mS
       dummyFee = Just $ Lovelace 0
       inputsThatRequireWitnessing = [input | (input,_) <- inputsAndScriptFiles]
 
+  -- IO Related
   allReferenceInputs <- getAllReferenceInputs era inputsAndScriptFiles mValue certFiles withdrawals readOnlyRefIns
   inputsAndMaybeScriptWits <- readScriptWitnessFiles era inputsAndScriptFiles
+  valuesWithScriptWits <- readValueScriptWitnesses era $ maybe (mempty, []) id mValue
+
+  -- Pure
+
+
   validatedCollateralTxIns <- validateTxInsCollateral era txinsc
   validatedRefInputs <- validateTxInsReference era allReferenceInputs
   validatedTxOuts <- validateTxOuts era txouts
@@ -478,7 +487,7 @@ runTxBuild (AnyCardanoEra era) (AnyConsensusModeParams cModeParams) networkId mS
   validatedTxWtdrwls <- validateTxWithdrawals era withdrawals
   validatedTxCerts <- validateTxCertificates era certFiles
   validatedTxUpProp <- validateTxUpdateProposal era mUpdatePropFile
-  validatedMintValue <- validateTxMintValue era mValue
+  validatedMintValue <- hoistEither $ validateTxMintValue era valuesWithScriptWits
   validatedTxScriptValidity <- validateTxScriptValidity era mScriptValidity
 
   case (consensusMode, cardanoEraStyle era) of
@@ -597,7 +606,14 @@ txFeatureMismatch :: CardanoEra era
                   -> TxFeature
                   -> ExceptT ShelleyTxCmdError IO a
 txFeatureMismatch era feature =
-    left (ShelleyTxCmdTxFeatureMismatch (anyCardanoEra era) feature)
+    hoistEither . Left $ ShelleyTxCmdTxFeatureMismatch (anyCardanoEra era) feature
+
+txFeatureMismatchPure :: CardanoEra era
+                      -> TxFeature
+                      -> Either ShelleyTxCmdError a
+txFeatureMismatchPure era feature =
+    Left (ShelleyTxCmdTxFeatureMismatch (anyCardanoEra era) feature)
+
 
 validateTxIns
   :: [(TxIn, Maybe (ScriptWitness WitCtxTxIn era))]
@@ -663,7 +679,7 @@ validateTxInsReference era allRefIns =
 getAllReferenceInputs
  :: CardanoEra era
  -> [(TxIn, Maybe (ScriptWitnessFiles WitCtxTxIn))]
- -> Maybe (Value, [ScriptWitnessFiles WitCtxMint ])
+ -> Maybe (Value, [ScriptWitnessFiles WitCtxMint])
  -> [(CertificateFile , Maybe (ScriptWitnessFiles WitCtxStake ))]
  -> [(StakeAddress, Lovelace, Maybe (ScriptWitnessFiles WitCtxStake ))]
  -> [TxIn]
@@ -1020,22 +1036,22 @@ validateTxScriptValidity era (Just scriptValidity) =
 -- access the script (and therefore the policy id).
 validateTxMintValue :: forall era.
                        CardanoEra era
-                    -> Maybe (Value, [ScriptWitnessFiles WitCtxMint])
-                    -> ExceptT ShelleyTxCmdError IO (TxMintValue BuildTx era)
-validateTxMintValue _ Nothing = return TxMintNone
-validateTxMintValue era (Just (val, scriptWitnessFiles)) = do
+                    -> (Value, [ScriptWitness WitCtxMint era])
+                    -> Either ShelleyTxCmdError (TxMintValue BuildTx era)
+validateTxMintValue era (val, scriptWitnesses) =
+  if List.null (valueToList val) && List.null scriptWitnesses
+  then return TxMintNone
+  else do
     case multiAssetSupportedInEra era of
-      Left _ -> txFeatureMismatch era TxFeatureMintValue
+      Left _ -> txFeatureMismatchPure era TxFeatureMintValue
       Right supported -> do
         -- The set of policy ids for which we need witnesses:
         let witnessesNeededSet :: Set PolicyId
             witnessesNeededSet =
               Set.fromList [ pid | (AssetId pid _, _) <- valueToList val ]
 
-        -- The set (and map) of policy ids for which we have witnesses:
-        witnesses <- mapM (createScriptWitness era) scriptWitnessFiles
         let witnessesProvidedMap :: Map PolicyId (ScriptWitness WitCtxMint era)
-            witnessesProvidedMap = Map.fromList $ gatherMintingWitnesses witnesses
+            witnessesProvidedMap = Map.fromList $ gatherMintingWitnesses scriptWitnesses
 
             witnessesProvidedSet = Map.keysSet witnessesProvidedMap
 
@@ -1056,13 +1072,13 @@ validateTxMintValue era (Just (val, scriptWitnessFiles)) = do
 
   validateAllWitnessesProvided witnessesNeeded witnessesProvided
     | null witnessesMissing = return ()
-    | otherwise = left (ShelleyTxCmdPolicyIdsMissing witnessesMissing)
+    | otherwise = Left (ShelleyTxCmdPolicyIdsMissing witnessesMissing)
     where
       witnessesMissing = Set.elems (witnessesNeeded Set.\\ witnessesProvided)
 
   validateNoUnnecessaryWitnesses witnessesNeeded witnessesProvided
     | null witnessesExtra = return ()
-    | otherwise = left (ShelleyTxCmdPolicyIdsExcess witnessesExtra)
+    | otherwise = Left (ShelleyTxCmdPolicyIdsExcess witnessesExtra)
     where
       witnessesExtra = Set.elems (witnessesProvided Set.\\ witnessesNeeded)
 
@@ -1075,6 +1091,15 @@ scriptWitnessPolicyId (PlutusScriptWitness _ version (PScript script) _ _ _) =
    Just . scriptPolicyId $ PlutusScript version script
 scriptWitnessPolicyId (PlutusScriptWitness _ _ (PReferenceScript _ mPid) _ _ _) =
    PolicyId <$> mPid
+
+
+readValueScriptWitnesses
+  :: CardanoEra era
+  -> (Value, [ScriptWitnessFiles WitCtxMint])
+  -> ExceptT ShelleyTxCmdError IO (Value, [ScriptWitness WitCtxMint era])
+readValueScriptWitnesses era (v, sWitFiles) = do
+  sWits <- mapM (createScriptWitness era) sWitFiles
+  return (v, sWits)
 
 createScriptWitness
   :: CardanoEra era
