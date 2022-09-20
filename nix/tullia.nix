@@ -78,6 +78,7 @@ in {
         #input: "${ciInputName}"
         #repo: "input-output-hk/cardano-node"
         #default_branch: false
+        #branch: "cicero"
       '';
     };
 
