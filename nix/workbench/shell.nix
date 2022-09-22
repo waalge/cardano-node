@@ -18,7 +18,7 @@
 
 with lib;
 
-let cluster = pkgs.supervisord-workbench-for-profile {
+let cluster = pkgs.cicero-workbench-for-profile {
       inherit profileName useCabalRun profiled;
     };
 
@@ -29,7 +29,7 @@ let cluster = pkgs.supervisord-workbench-for-profile {
       do shift; done       ## Flush argv[]
 
       echo 'workbench shellHook:  workbenchDevMode=${toString workbenchDevMode} useCabalRun=${toString useCabalRun} profiled=${toString profiled} profileName=${profileName}'
-      export WB_BACKEND=supervisor
+      export WB_BACKEND=cicero
       export WB_SHELL_PROFILE=${profileName}
       export WB_SHELL_PROFILE_DIR=${profile}
 
@@ -91,6 +91,7 @@ in project.shellFor {
   nativeBuildInputs = with pkgs; with haskellPackages; with cardanoNodePackages; [
     cardano-ping
     cabalWrapped
+# TODO: cicero
     db-analyser
     ghcid
     haskellBuildUtils

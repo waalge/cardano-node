@@ -1,5 +1,6 @@
 { pkgs, lib, profileNix, backend }:
   with lib;
+    # TODO: Remove the `d`. What is cicerod or dockerd ?
     pkgs.runCommand "workbench-profile-output-${profileNix.name}-${backend.name}d"
       { buildInputs = [];
         profileConfigJsonPath = profileNix.JSON;

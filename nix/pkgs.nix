@@ -84,6 +84,11 @@ final: prev: with final; {
   supervisord-workbench-nix =
     { workbench ? pkgs.workbench, ... }@args: pkgs.callPackage ./workbench/backend/supervisor.nix args;
 
+  cicero-workbench-cabal =
+    { workbench ? pkgs.workbench, ... }@args: pkgs.callPackage ./workbench/backend/cicero.nix (args // { inherit cicero; useCabalRun = true; });
+  cicero-workbench-nix =
+    { workbench ? pkgs.workbench, ... }@args: pkgs.callPackage ./workbench/backend/cicero.nix (args // { inherit cicero; });
+
   all-profiles-json = (workbench.all-profiles{ inherit (supervisord-workbench-nix) backend; }).JSON;
 
   # An instance of the workbench, specialised to the supervisord backend and a profile,
@@ -101,6 +106,20 @@ final: prev: with final; {
     pkgs.callPackage ./workbench/backend/supervisor-run.nix
       {
         inherit batchName profileName supervisord-workbench cardano-node-rev;
+      };
+
+  cicero-workbench-for-profile =
+    { batchName             ? customConfig.localCluster.batchName
+    , profileName           ? customConfig.localCluster.profileName
+    , useCabalRun           ? false
+    , workbenchDevMode      ? false
+    , profiled              ? false
+    , cicero-workbench ? pkgs.callPackage ./workbench/backend/cicero.nix { inherit cicero useCabalRun; }
+    , cardano-node-rev      ? null
+    }:
+    pkgs.callPackage ./workbench/backend/cicero-run.nix
+      {
+        inherit batchName profileName cicero-workbench cardano-node-rev;
       };
 
   # Disable failing python uvloop tests

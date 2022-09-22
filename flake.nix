@@ -59,6 +59,8 @@
     };
 
     cardano-mainnet-mirror.url = "github:input-output-hk/cardano-mainnet-mirror/nix";
+
+    cicero.url = "github:input-output-hk/cicero";
   };
 
   outputs =
@@ -74,6 +76,7 @@
     , node-measured
     , node-process
     , cardano-node-workbench
+    , cicero
     , ...
     }@input:
     let
@@ -98,7 +101,7 @@
         iohkNix.overlays.cardano-lib
         iohkNix.overlays.utils
         (final: prev: {
-          inherit customConfig;
+          inherit customConfig cicero;
           gitrev = final.customConfig.gitrev or self.rev or "0000000000000000000000000000000000000000";
           commonLib = lib
             // iohkNix.lib
