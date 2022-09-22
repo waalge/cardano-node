@@ -403,7 +403,7 @@ runTxBuildRaw (AnyCardanoEra era)
 
     txBody <-
       firstExceptT ShelleyTxCmdTxBodyError . hoistEither $
-        makeTransactionBody txBodyContent
+        createAndValidateTransactionBody txBodyContent
     case outputFormat of
       OutputCliSerialisation ->
         firstExceptT ShelleyTxCmdWriteFileError . newExceptT $
