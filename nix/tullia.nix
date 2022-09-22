@@ -1,4 +1,9 @@
+self: system:
+
 let
+  inherit (self.inputs.nixpkgs) lib;
+  inherit (self.inputs.utils.lib) flattenTree;
+
   ciInputName = "GitHub event";
 in {
   tasks = let
@@ -26,29 +31,44 @@ in {
       then with config.preset.github-ci; "github:${repo}/${sha}"
       else "."
     );
-  in {
-    "ci/push" = args: {
+
+    os = {
+      x86_64-linux = "linux";
+      x86_64-darwin = "macos";
+    }.${system};
+
+    systemHydraJobs = hydraJobs:
+      lib.pipe hydraJobs.${os} [
+        (__mapAttrs (_: flattenTree))
+        (__mapAttrs (category: lib.mapAttrs' (jobName: lib.nameValuePair "${category}/${jobName}")))
+        __attrValues
+        (__foldl' lib.mergeAttrs {})
+      ]
+      // { inherit (hydraJobs) build-version cardano-deployment; };
+  in
+    (__mapAttrs (jobName: _: (args: {
       imports = [common];
 
       command.text = ''
-        nix build -L ${flakeUrl args}#hydraJobs.required
+        job=${flakeUrl args}#hydraJobs.${lib.escapeShellArg (__replaceStrings ["/"] ["."] jobName)}
+        echo Building "$job"…
+        nix build -L "$job"
       '';
 
       memory = 1024 * 8;
       nomad.resources.cpu = 3500;
+    })) (systemHydraJobs self.outputs.hydraJobs))
+    // {
+      "ci/push" = {...}: {
+        imports = [common];
+        after = __attrNames (systemHydraJobs self.outputs.hydraJobs);
+      };
+
+      "ci/pr" = {...}: {
+        imports = [common];
+        after = __attrNames (systemHydraJobs self.outputs.hydraJobsPr);
+      };
     };
-
-    "ci/pr" = args: {
-      imports = [common];
-
-      command.text = ''
-        nix build -L ${flakeUrl args}#hydraJobsPr.required
-      '';
-
-      memory = 1024 * 8;
-      nomad.resources.cpu = 3500;
-    };
-  };
 
   actions = {
     "cardano-node/ci/push" = {
