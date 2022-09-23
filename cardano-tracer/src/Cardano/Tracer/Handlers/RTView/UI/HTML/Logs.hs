@@ -26,7 +26,10 @@ mkLogsLiveView = do
               , element closeIt
               ]
           , UI.mkElement "section" #. "modal-card-body rt-view-logs-live-view-body" #+
-              [ UI.div ## "logs-live-view-table-container" #. "table-container" #+
+              [ UI.div #. "bd-notification" #+
+                  [ UI.div ## "logs-live-view-nodes-checkboxes" #. "field" #+ []
+                  ]
+              , UI.div ## "logs-live-view-table-container" #. "table-container" #+
                   [ UI.table ## "logs-live-view-table" #. "table is-fullwidth rt-view-logs-live-view-table" #+
                       [ UI.mkElement "thead" #+
                           [ UI.tr #+

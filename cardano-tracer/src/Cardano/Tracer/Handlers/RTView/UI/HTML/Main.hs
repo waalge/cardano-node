@@ -59,6 +59,7 @@ mkMainPage tracerEnv displayedElements nodesEraSettings reloadFlag
     , UI.mkElement "style" # set UI.html bulmaPageloaderCSS
     , UI.mkElement "style" # set UI.html bulmaSwitchCSS
     , UI.mkElement "style" # set UI.html bulmaDividerCSS
+    , UI.mkElement "style" # set UI.html bulmaCheckboxCSS
     , UI.mkElement "style" # set UI.html ownCSS
     ]
 

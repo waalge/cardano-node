@@ -202,15 +202,15 @@ span[data-tooltip] {
 }
 
 .rt-view-logs-live-view-node {
-  width: 13%;
+  width: 10%;
 }
 
 .rt-view-logs-live-view-timestamp {
-  width: 18%;
+  width: 15%;
 }
 
 .rt-view-logs-live-view-severity {
-  width: 11%;
+  width: 9%;
 }
 
 .rt-view-logs-live-view-namespace {

@@ -13,8 +13,8 @@ module Cardano.Tracer.Handlers.RTView.Update.Nodes
 
 import           Control.Concurrent.STM (atomically)
 import           Control.Concurrent.STM.TVar
-import           Control.Monad (forM_, unless, when)
-import           Control.Monad.Extra (whenJust)
+import           Control.Monad (forM_, unless, void, when)
+import           Control.Monad.Extra (whenJust, whenJustM)
 import           Data.List (find)
 import           Data.List.NonEmpty (NonEmpty)
 import qualified Data.Map.Strict as M
@@ -70,10 +70,12 @@ updateNodesUI tracerEnv@TracerEnv{teConnectedNodes, teAcceptedMetrics}
     let disconnected   = displayed \\ connected -- In 'displayed' but not in 'connected'.
         newlyConnected = connected \\ displayed -- In 'connected' but not in 'displayed'.
     deleteColumnsForDisconnected connected disconnected
+    deleteLiveViewNodesForDisconnected tracerEnv disconnected
     addColumnsForConnected
       tracerEnv
       newlyConnected
       loggingConfig
+    addLiveViewNodesForConnected tracerEnv newlyConnected
     checkNoNodesState connected noNodesProgressTimer
     askNSetNodeInfo tracerEnv newlyConnected displayedElements
     addDatasetsForConnected tracerEnv newlyConnected colors datasetIndices
@@ -167,6 +169,54 @@ updateNodesUptime tracerEnv displayedElements = do
               , (nodeUptimeMElId, T.pack minsNum  <> "m")
               , (nodeUptimeSElId, T.pack secsNum  <> "s")
               ]
+
+addLiveViewNodesForConnected
+  :: TracerEnv
+  -> Set NodeId
+  -> UI ()
+addLiveViewNodesForConnected tracerEnv newlyConnected = do
+  window <- askWindow
+  whenJustM (UI.getElementById window "logs-live-view-nodes-checkboxes") $ \el ->
+    forM_ newlyConnected $ \nodeId@(NodeId anId) -> do
+      nodeName  <- liftIO $ askNodeName tracerEnv nodeId
+      nodeColor <- liftIO $ getSavedColorForNode nodeName
+
+      let nodeNamePrepared = T.unpack $
+            if T.length nodeName > 13
+              then T.take 10 nodeName <> "..."
+              else nodeName
+          checkId = T.unpack anId <> "__node-live-view-checkbox"
+          checkLabelId = T.unpack anId <> "__node-live-view-checkbox-label"
+
+      void $ element el #+
+        [ UI.input ## checkId
+                   #. "is-checkradio is-medium"
+                   # set UI.type_ "checkbox"
+                   # set UI.name checkId
+                   # set UI.checked True
+        , case nodeColor of
+            Nothing ->
+              UI.label ## checkLabelId
+                       # set UI.for checkId
+                       # set text nodeNamePrepared
+            Just (Color code) ->
+              UI.label ## checkLabelId
+                       # set UI.for checkId
+                       # set style [("color", code)]
+                       # set text nodeNamePrepared
+        ]
+
+deleteLiveViewNodesForDisconnected
+  :: TracerEnv
+  -> Set NodeId
+  -> UI ()
+deleteLiveViewNodesForDisconnected _tracerEnv disconnected = do
+  window <- askWindow
+  forM_ disconnected $ \(NodeId anId) -> do
+    let checkId = anId <> "__node-live-view-checkbox"
+        checkLabelId = anId <> "__node-live-view-checkbox-label"
+    findAndDo window checkId delete'
+    findAndDo window checkLabelId delete'
 
 setBlockReplayProgress
   :: Set NodeId

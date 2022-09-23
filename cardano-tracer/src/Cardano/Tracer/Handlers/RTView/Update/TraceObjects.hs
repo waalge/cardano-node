@@ -16,6 +16,8 @@ import           Data.Time.Format (defaultTimeLocale, formatTime)
 import qualified Graphics.UI.Threepenny as UI
 import           Graphics.UI.Threepenny.Core
 
+import           Cardano.Logging (SeverityS (..))
+
 import           Cardano.Tracer.Environment
 import           Cardano.Tracer.Handlers.RTView.State.TraceObjects
 import           Cardano.Tracer.Handlers.RTView.UI.Charts
@@ -35,24 +37,28 @@ updateUIBySavedTOs tracerEnv@TracerEnv{teSavedTO} llvCounters =
   whenM logsLiveViewIsOpened $ do
     window <- askWindow
     whenJustM (UI.getElementById window "node-logs-live-view-tbody") $ \el ->
-      forConnectedUI_ tracerEnv $ \nodeId -> do
+      forConnectedUI_ tracerEnv $ \nodeId@(NodeId anId) -> do
         nodeName        <- liftIO $ askNodeName tracerEnv nodeId
         nodeColor       <- liftIO $ getSavedColorForNode nodeName
         tosFromThisNode <- liftIO $ getTraceObjects teSavedTO nodeId
         forM_ tosFromThisNode $ \trObInfo -> do
-          doAddItemRow nodeId nodeName nodeColor llvCounters el trObInfo
-          -- Since we have added a new item row, we have to check if there are
-          -- too many items already. If so - we have to remove old item row,
-          -- to prevent too big number of them (if the user opened the window
-          -- for a long time).
-          liftIO (getLogsLiveViewCounter llvCounters nodeId) >>= \case
-            Nothing -> return ()
-            Just currentNumber ->
-              when (currentNumber > maxNumberOfLogsLiveViewItems) $ do
-                -- Ok, we have to delete outdated item row.
-                let !outdatedItemNumber = currentNumber - maxNumberOfLogsLiveViewItems
-                    outdatedItemId = nodeName <> "llv" <> showT outdatedItemNumber
-                findAndDo window outdatedItemId delete'
+          -- We should add log items only for nodes which is "enabled" via checkbox.
+          let checkId = T.unpack anId <> "__node-live-view-checkbox"
+          whenJustM (UI.getElementById window checkId) $ \checkbox -> do
+            whenM (get UI.checked checkbox) $ do
+              doAddItemRow nodeId nodeName nodeColor llvCounters el trObInfo
+              -- Since we have added a new item row, we have to check if there are
+              -- too many items already. If so - we have to remove old item row,
+              -- to prevent too big number of them (if the user opened the window
+              -- for a long time).
+              liftIO (getLogsLiveViewCounter llvCounters nodeId) >>= \case
+                Nothing -> return ()
+                Just currentNumber ->
+                  when (currentNumber > maxNumberOfLogsLiveViewItems) $ do
+                    -- Ok, we have to delete outdated item row.
+                    let !outdatedItemNumber = currentNumber - maxNumberOfLogsLiveViewItems
+                        outdatedItemId = nodeName <> "llv" <> showT outdatedItemNumber
+                    findAndDo window outdatedItemId delete'
  where
   logsLiveViewIsOpened = do
     window <- askWindow
@@ -78,15 +84,20 @@ doAddItemRow nodeId@(NodeId anId) nodeName nodeColor
  where
   mkItemRow = do
     copyItemIcon <- image "has-tooltip-multiline has-tooltip-left rt-view-copy-icon" copySVG
-                          # set dataTooltip "Click to copy this error"
+                          # set dataTooltip "Click to copy this log item"
     on UI.click copyItemIcon . const $ copyTextToClipboard $
       "[" <> preparedTS ts <> "] [" <> show sev <> "] [" <> T.unpack ns <> "] [" <> T.unpack msg <> "]"
 
+    let nodeNamePrepared = T.unpack $
+          if T.length nodeName > 13
+            then T.take 10 nodeName <> "..."
+            else nodeName
+
     nodeNameLabel <-
       case nodeColor of
-        Nothing -> UI.span # set text (T.unpack nodeName)
+        Nothing -> UI.span # set text nodeNamePrepared
         Just (Color code) -> UI.span # set style [("color", code)]
-                                     # set text (T.unpack nodeName)
+                                     # set text nodeNamePrepared
 
     logItemRowId <-
       liftIO (getLogsLiveViewCounter llvCounters nodeId) >>= \case
@@ -102,7 +113,14 @@ doAddItemRow nodeId@(NodeId anId) nodeName nodeColor
             [ UI.span # set text (preparedTS ts)
             ]
         , UI.td #+
-            [ UI.span #. "tag is-medium is-info" # set text (show sev)
+            [ let sevClass =
+                    case sev of
+                      Debug   -> "is-primary"
+                      Info    -> "is-link"
+                      Notice  -> "is-info"
+                      Warning -> "is-warning"
+                      _       -> "is-danger"
+              in UI.span #. ("tag is-medium is-rounded " <> sevClass) # set text (show sev)
             ]
         , UI.td #+
             [ UI.p #. "control" #+
@@ -125,4 +143,4 @@ doAddItemRow nodeId@(NodeId anId) nodeName nodeColor
             ]
         ]
 
-  preparedTS = formatTime defaultTimeLocale "%b %e, %Y %T"
+  preparedTS = formatTime defaultTimeLocale "%D %T"
