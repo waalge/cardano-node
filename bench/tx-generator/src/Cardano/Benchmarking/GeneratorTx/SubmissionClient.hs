@@ -24,8 +24,8 @@ module Cardano.Benchmarking.GeneratorTx.SubmissionClient
   , txSubmissionClient
   ) where
 
-import           Prelude (error,fail)
 import           Cardano.Prelude hiding (ByteString, atomically, retry, state, threadDelay)
+import           Prelude (error, fail)
 
 import           Control.Arrow ((&&&))
 
@@ -45,17 +45,16 @@ import           Cardano.Tracing.OrphanInstances.Shelley ()
 import qualified Ouroboros.Consensus.Cardano as Consensus (CardanoBlock)
 import           Ouroboros.Consensus.Ledger.SupportsMempool (GenTx, GenTxId, txInBlockSize)
 import qualified Ouroboros.Consensus.Ledger.SupportsMempool as Mempool
-import qualified Ouroboros.Consensus.Shelley.Ledger.Mempool as Mempool (TxId(ShelleyTxId))
 import           Ouroboros.Consensus.Shelley.Eras (StandardCrypto)
+import qualified Ouroboros.Consensus.Shelley.Ledger.Mempool as Mempool (TxId (ShelleyTxId))
 
-import qualified Ouroboros.Consensus.Cardano.Block as Block (TxId(GenTxIdShelley, GenTxIdAllegra, GenTxIdAlonzo, GenTxIdMary,GenTxIdBabbage ))
+import qualified Ouroboros.Consensus.Cardano.Block as Block
+                   (TxId (GenTxIdAllegra, GenTxIdAlonzo, GenTxIdBabbage, GenTxIdMary, GenTxIdShelley))
 
 import           Ouroboros.Network.Protocol.TxSubmission2.Client (ClientStIdle (..),
-                                                                  ClientStTxIds (..),
-                                                                  ClientStTxs (..),
-                                                                  TxSubmissionClient (..))
+                   ClientStTxIds (..), ClientStTxs (..), TxSubmissionClient (..))
 import           Ouroboros.Network.Protocol.TxSubmission2.Type (BlockingReplyList (..),
-                                                                TokBlockingStyle (..), TxSizeInBytes)
+                   TokBlockingStyle (..), TxSizeInBytes)
 
 import           Cardano.Api
 import           Cardano.Api.Shelley (fromShelleyTxId, toConsensusGenTx)
@@ -158,7 +157,7 @@ txSubmissionClient tr bmtr initialTxSource endOfProtocolCallback =
       TokNonBlocking ->  pure $ SendMsgReplyTxIds
                              (NonBlockingReply $ txToIdSize <$> newTxs)
                              (client stateC)
-                    
+
   requestTxs ::
        LocalState era
     -> [GenTxId CardanoBlock]
@@ -188,7 +187,7 @@ txSubmissionClient tr bmtr initialTxSource endOfProtocolCallback =
   txToIdSize = (Mempool.txId &&& txInBlockSize) . toGenTx
 
   toGenTx :: tx -> GenTx CardanoBlock
-  toGenTx tx = case shelleyBasedEra @ era of
+  toGenTx tx = case shelleyBasedEra @era of
     ShelleyBasedEraShelley  -> toConsensusGenTx $ TxInMode tx ShelleyEraInCardanoMode
     ShelleyBasedEraAllegra  -> toConsensusGenTx $ TxInMode tx AllegraEraInCardanoMode
     ShelleyBasedEraMary     -> toConsensusGenTx $ TxInMode tx MaryEraInCardanoMode

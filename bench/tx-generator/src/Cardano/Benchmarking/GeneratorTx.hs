@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -45,8 +45,8 @@ import           Cardano.Benchmarking.GeneratorTx.NodeToNode
 import           Cardano.Benchmarking.GeneratorTx.Submission
 import           Cardano.Benchmarking.GeneratorTx.SubmissionClient
 import           Cardano.Benchmarking.GeneratorTx.Tx
-import           Cardano.Benchmarking.TpsThrottle
 import           Cardano.Benchmarking.LogTypes
+import           Cardano.Benchmarking.TpsThrottle
 import           Cardano.Benchmarking.Types
 import           Cardano.Benchmarking.Wallet (WalletScript)
 
@@ -74,7 +74,7 @@ secureGenesisFund :: forall era. IsShelleyBasedEra era
   -> AddressInEra era
   -> ExceptT TxGenError IO Fund
 secureGenesisFund submitTracer localSubmitTx networkId genesis txFee ttl key outAddr = do
-  let (_inAddr, lovelace) = genesisFundForKey @ era networkId genesis key
+  let (_inAddr, lovelace) = genesisFundForKey @era networkId genesis key
       (tx, fund) =
          genesisExpenditure networkId key outAddr lovelace txFee ttl
   r <- liftIO $

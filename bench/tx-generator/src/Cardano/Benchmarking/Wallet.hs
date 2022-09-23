@@ -7,15 +7,15 @@ module Cardano.Benchmarking.Wallet
 where
 import           Prelude
 
-import           Data.Maybe
 import           Control.Concurrent.MVar
+import           Data.Maybe
 
 import           Cardano.Api
 
-import           Cardano.Benchmarking.FundSet as FundSet
+import           Cardano.Api.Shelley (ProtocolParameters, ReferenceScript (..))
 import           Cardano.Benchmarking.Fifo as Fifo
+import           Cardano.Benchmarking.FundSet as FundSet
 import           Cardano.Benchmarking.Types (NumberOfTxs (..))
-import           Cardano.Api.Shelley (ProtocolParameters, ReferenceScript(..))
 
 -- All the actual functionality of Wallet / WalletRef has been removed
 -- and WalletRef has been stripped down to MVar FundSet.
@@ -64,40 +64,40 @@ mkWalletFundStore walletRef fund = modifyMVar_  walletRef
 walletSource :: WalletRef -> Int -> FundSource IO
 walletSource ref munch = modifyMVar ref $ \fifo -> return $ case Fifo.removeN munch fifo of
   Nothing -> (fifo, Left "WalletSource: out of funds")
-  Just (newFifo, funds) -> (newFifo, Right funds) 
+  Just (newFifo, funds) -> (newFifo, Right funds)
 
 makeToUTxOList :: [ ToUTxO era ] -> ToUTxOList era [ Lovelace ]
-makeToUTxOList fkts values 
+makeToUTxOList fkts values
   = (outs, \txId -> map (\f -> f txId) fs)
   where
     (outs, fs) =unzip $ map worker $ zip3 fkts values [TxIx 0 ..]
     worker (toUTxO, value, idx)
       = let (o, f ) = toUTxO value
-         in  (o, f idx) 
+         in  (o, f idx)
 
 data PayWithChange
   = PayExact [Lovelace]
   | PayWithChange Lovelace [Lovelace]
-  
+
 mangleWithChange :: Monad m => CreateAndStore m era -> CreateAndStore m era -> CreateAndStoreList m era PayWithChange
 mangleWithChange mkChange mkPayment outs = case outs of
   PayExact l -> mangle (repeat mkPayment) l
   PayWithChange change payments -> mangle (mkChange : repeat mkPayment) (change : payments)
 
 mangle :: Monad m => [ CreateAndStore m era ] -> CreateAndStoreList m era [ Lovelace ]
-mangle fkts values 
+mangle fkts values
   = (outs, \txId -> mapM_ (\f -> f txId) fs)
   where
     (outs, fs) =unzip $ map worker $ zip3 fkts values [TxIx 0 ..]
     worker (toUTxO, value, idx)
       = let (o, f ) = toUTxO value
-         in  (o, f idx) 
+         in  (o, f idx)
 
 --TODO use Error monad
 --TODO need to break this up
 sourceToStoreTransaction ::
      TxGenerator era
-  -> FundSource IO         
+  -> FundSource IO
   -> ([Lovelace] -> split)
   -> ToUTxOList era split
   -> FundToStoreList IO                --inline to ToUTxOList
@@ -119,7 +119,7 @@ sourceToStoreTransaction txGenerator fundSource inToOut mkTxOut fundToStore = do
 
 sourceToStoreTransactionNew ::
      TxGenerator era
-  -> FundSource IO         
+  -> FundSource IO
   -> ([Lovelace] -> split)
   -> CreateAndStoreList IO era split
   -> IO (Either String (Tx era))
@@ -161,10 +161,10 @@ mkUTxOVariant networkId key value
     , mkNewFund value
     )
  where
-  mkTxOut v = TxOut (keyAddress @ era networkId key) (lovelaceToTxOutValue v) TxOutDatumNone ReferenceScriptNone
+  mkTxOut v = TxOut (keyAddress @era networkId key) (lovelaceToTxOutValue v) TxOutDatumNone ReferenceScriptNone
 
   mkNewFund :: Lovelace -> TxIx -> TxId -> Fund
-  mkNewFund val txIx txId = Fund $ InAnyCardanoEra (cardanoEra @ era) $ FundInEra {
+  mkNewFund val txIx txId = Fund $ InAnyCardanoEra (cardanoEra @era) $ FundInEra {
       _fundTxIn = TxIn txId txIx
     , _fundWitness = KeyWitness KeyWitnessForSpending
     , _fundVal = lovelaceToTxOutValue val
@@ -188,16 +188,16 @@ mkUTxOScript networkId (script, txOutDatum) witness value
                        (PaymentCredentialByScript $ hashScript script)
                        NoStakeAddress
 
-  mkTxOut v = case scriptDataSupportedInEra (cardanoEra @ era) of
+  mkTxOut v = case scriptDataSupportedInEra (cardanoEra @era) of
     Nothing -> error " mkUtxOScript scriptDataSupportedInEra==Nothing"
     Just tag -> TxOut
                   plutusScriptAddr
                   (lovelaceToTxOutValue v)
                   (TxOutDatumHash tag $ hashScriptData txOutDatum)
-                  ReferenceScriptNone   
+                  ReferenceScriptNone
 
   mkNewFund :: Lovelace -> TxIx -> TxId -> Fund
-  mkNewFund val txIx txId = Fund $ InAnyCardanoEra (cardanoEra @ era) $ FundInEra {
+  mkNewFund val txIx txId = Fund $ InAnyCardanoEra (cardanoEra @era) $ FundInEra {
       _fundTxIn = TxIn txId txIx
     , _fundWitness = witness
     , _fundVal = lovelaceToTxOutValue val
@@ -239,7 +239,7 @@ genTx protocolParameters (collateral, collFunds) fee metadata inFunds outputs
     }
 
   upperBound :: TxValidityUpperBound era
-  upperBound = case shelleyBasedEra @ era of
+  upperBound = case shelleyBasedEra @era of
     ShelleyBasedEraShelley -> TxValidityUpperBound ValidityUpperBoundInShelleyEra $ SlotNo maxBound
     ShelleyBasedEraAllegra -> TxValidityNoUpperBound ValidityNoUpperBoundInAllegraEra
     ShelleyBasedEraMary    -> TxValidityNoUpperBound ValidityNoUpperBoundInMaryEra
