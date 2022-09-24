@@ -23,6 +23,9 @@ packages:
 package cardano-api
   ghc-options: -Werror
 
+package cardano-api-gen
+  ghc-options: -Werror
+
 package cardano-cli
   ghc-options: -Werror
 
