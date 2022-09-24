@@ -64,9 +64,6 @@ test-show-details: direct
 
 -- Then enable specific tests in this repo
 
-package cardano-api
-  tests: True
-
 package cardano-api-gen
   tests: True
 
