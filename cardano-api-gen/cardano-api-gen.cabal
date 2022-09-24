@@ -93,7 +93,7 @@ test-suite cardano-api-gen-test
                       , tasty
                       , tasty-hedgehog
                       , tasty-quickcheck
-                      -- , tasty-th
+                      , tasty-th
                       , time
 
   other-modules:        Test.Cardano.Api.Crypto
