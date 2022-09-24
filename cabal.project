@@ -3,6 +3,7 @@ index-state: 2022-02-18T00:00:00Z
 
 packages:
     cardano-api
+    cardano-api-gen
     cardano-cli
     cardano-client-demo
     cardano-git-rev
