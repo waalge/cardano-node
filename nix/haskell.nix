@@ -4,6 +4,8 @@
 { haskell-nix
 , incl
 , CHaP
+, cardano-api
+, plutus
 }:
 let
 
@@ -20,7 +22,7 @@ let
     {
       src = ../.;
       name = "cardano-node";
-      compiler-nix-name = lib.mkDefault "ghc8107";
+      compiler-nix-name = lib.mkDefault "ghc927";
       # extra-compilers
       flake.variants = lib.genAttrs ["ghc927"] (x: {compiler-nix-name = x;});
       cabalProjectLocal = ''
@@ -31,7 +33,9 @@ let
           flags: +use-ghc-stub
       '';
       inputMap = {
+        "https://github.com/input-output-hk/plutus" = plutus;
         "https://input-output-hk.github.io/cardano-haskell-packages" = CHaP;
+        "https://github.com/waalge/cardano-api" = cardano-api;
       };
       shell = {
         name = "cabal-dev-shell";

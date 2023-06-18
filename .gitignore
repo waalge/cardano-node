@@ -1,3 +1,5 @@
+.direnv/
+.envrc 
 .stack-work/
 .ghc.environment.*
 .nix-shell-cabal.project

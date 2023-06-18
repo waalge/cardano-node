@@ -25,7 +25,7 @@
     };
     utils.url = "github:numtide/flake-utils";
     iohkNix = {
-      url = "github:input-output-hk/iohk-nix";
+      url = "github:input-output-hk/iohk-nix?ref=86421fdd89b3af43fa716ccd07638f96c6ecd1e4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     ops-lib = {
@@ -67,6 +67,11 @@
         nixpkgs.follows = "nixpkgs";
       };
     };
+    plutus = {
+      url = "github:input-output-hk/plutus?ref=b1fbf43f5a2677b8ad39e2208ca57395a807f3e7";
+      flake = false;
+    };
+    cardano-api.url = "github:waalge/cardano-api/4b18142afad94c2f10a3c566f16113d69cbde479";
   };
 
   outputs =
@@ -84,6 +89,8 @@
     , nix2container
     , cardano-automation
     , em
+    , cardano-api
+    , plutus
     , ...
     }@input:
     let
@@ -418,6 +425,8 @@
           inherit (final) haskell-nix;
           inherit (std) incl;
           inherit CHaP;
+          inherit plutus;
+          inherit cardano-api;
         }).appendModule [
           customConfig.haskellNix
         ];
