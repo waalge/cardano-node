@@ -35,7 +35,7 @@ library
                       , ansi-terminal
                       , bytestring
                       , cardano-api ^>= 8.2
-                      , cardano-cli
+                      , cardano-cli ^>= 8.2
                       , cardano-crypto-class
                       , cardano-crypto-wrapper
                       , cardano-ledger-alonzo
@@ -72,32 +72,31 @@ library
 
   hs-source-dirs:       src
   exposed-modules:      Cardano.Testnet
-                        Testnet.Babbage
-                        Testnet.Byron
-                        Testnet.Commands.Genesis
+                        Parsers.Run
+                        Testnet.Start.Babbage
+                        Testnet.Start.Byron
+                        Testnet.Start.Conway
                         Testnet.Conf
+                        Testnet.Defaults
+                        Testnet.Filepath
                         Testnet.Options
+                        Testnet.Property.Assert
+                        Testnet.Property.Run
+                        Testnet.Property.Utils
+                        Testnet.Process.Cli
+                        Testnet.Process.Run
+                        Testnet.Runtime
                         Testnet.Topology 
-                        Testnet.Utils
-                        Testnet.Util.Assert
-                        Testnet.Util.Base
-                        Testnet.Util.Cli
-                        Testnet.Util.Ignore
-                        Testnet.Util.Process
-                        Testnet.Util.Runtime
-                        Testnet.Parsers
 
   other-modules:        Parsers.Babbage
                         Parsers.Byron
                         Parsers.Cardano
+                        Parsers.Conway
                         Parsers.Help
                         Parsers.Shelley
                         Parsers.Version
-                        Testnet
-                        Testnet.Cardano
-                        Testnet.Commands.Governance
-                        Testnet.Run
-                        Testnet.Shelley
+                        Testnet.Start.Cardano
+                        Testnet.Start.Shelley
                         Paths_cardano_testnet
 
   autogen-modules:      Paths_cardano_testnet
@@ -124,9 +123,9 @@ test-suite cardano-testnet-golden
 
   main-is:              cardano-testnet-golden.hs
 
-  other-modules:        Test.Golden.Testnet.Config
-                        Test.Golden.Testnet.Help
-                        Test.Golden.Testnet.Util
+  other-modules:        Cardano.Testnet.Test.Golden.Config
+                        Cardano.Testnet.Test.Golden.Help
+                        Cardano.Testnet.Test.Golden.Util
 
   type:                 exitcode-stdio-1.0
 
@@ -150,7 +149,7 @@ test-suite cardano-testnet-golden
   ghc-options:          -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
 
   build-tool-depends:   cardano-node:cardano-node
-                      , cardano-cli:cardano-cli
+                      , cardano-cli:cardano-cli ^>= 8.2
                       , cardano-submit-api:cardano-submit-api
                       , cardano-testnet:cardano-testnet
 
@@ -161,15 +160,15 @@ test-suite cardano-testnet-test
 
   main-is:              cardano-testnet-test.hs
 
-  other-modules:        Test.Cli.Alonzo.LeadershipSchedule
-                        Test.Cli.Babbage.LeadershipSchedule
-                        Test.Cli.Babbage.StakeSnapshot
-                        Test.Cli.KesPeriodInfo
-                        Test.Cli.QuerySlotNumber
-                        Test.FoldBlocks
-                        Test.Misc
-                        Test.Node.Shutdown
-                        Test.ShutdownOnSlotSynced
+  other-modules:        Cardano.Testnet.Test.Cli.Alonzo.LeadershipSchedule
+                        Cardano.Testnet.Test.Cli.Babbage.LeadershipSchedule
+                        Cardano.Testnet.Test.Cli.Babbage.StakeSnapshot
+                        Cardano.Testnet.Test.Cli.KesPeriodInfo
+                        Cardano.Testnet.Test.Cli.QuerySlotNumber
+                        Cardano.Testnet.Test.FoldBlocks
+                        Cardano.Testnet.Test.Misc
+                        Cardano.Testnet.Test.Node.Shutdown
+                        Cardano.Testnet.Test.ShutdownOnSlotSynced
 
   type:                 exitcode-stdio-1.0
 
@@ -177,8 +176,7 @@ test-suite cardano-testnet-test
                       , async
                       , bytestring
                       , cardano-api ^>= 8.2
-                      , cardano-api-gen ^>= 8.1.0.2
-                      , cardano-cli
+                      , cardano-cli ^>= 8.2
                       , cardano-crypto-class
                       , cardano-testnet
                       , containers
@@ -195,6 +193,6 @@ test-suite cardano-testnet-test
   ghc-options:          -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
 
   build-tool-depends:   cardano-node:cardano-node
-                      , cardano-cli:cardano-cli
+                      , cardano-cli:cardano-cli ^>= 8.2
                       , cardano-submit-api:cardano-submit-api
                       , cardano-testnet:cardano-testnet

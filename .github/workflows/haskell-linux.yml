@@ -1,7 +1,7 @@
 name: Haskell Linux CI
 
 on:
-  push:
+  pull_request: # Required for workflows to be able to be approved from forks
   merge_group:
 
   # DO NOT DELETE.
@@ -31,7 +31,7 @@ jobs:
 
     env:
       # Modify this value to "invalidate" the cabal cache.
-      CABAL_CACHE_VERSION: "2023-06-01"
+      CABAL_CACHE_VERSION: "2023-06-20"
 
       # Modify this value to "invalidate" the secp cache.
       SECP_CACHE_VERSION: "2022-12-30"
@@ -156,7 +156,7 @@ jobs:
         TMPDIR: ${{ runner.temp }}
         TMP: ${{ runner.temp }}
         KEEP_WORKSPACE: 1
-      run: cabal test cardano-testnet cardano-node cardano-node-chairman cardano-cli cardano-submit-api
+      run: cabal test cardano-testnet cardano-node cardano-node-chairman cardano-submit-api
 
     - name: Tar failed tests workspaces
       if: ${{ failure() }}

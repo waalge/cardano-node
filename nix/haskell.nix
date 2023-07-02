@@ -22,7 +22,7 @@ let
     {
       src = ../.;
       name = "cardano-node";
-      compiler-nix-name = lib.mkDefault "ghc927";
+      compiler-nix-name = lib.mkDefault "ghc928";
       # extra-compilers
       flake.variants = lib.genAttrs ["ghc927"] (x: {compiler-nix-name = x;});
       cabalProjectLocal = ''
@@ -48,8 +48,6 @@ let
           ghcid
           haskell-language-server
           cabal
-          tullia
-          nix-systems
         ];
 
         withHoogle = true;
@@ -78,17 +76,13 @@ let
           ({ pkgs, ... }: {
             # Needed for the CLI tests.
             # Coreutils because we need 'paste'.
-            packages.cardano-cli.components.tests.cardano-cli-test.build-tools =
-              lib.mkForce (with pkgs.buildPackages; [ jq coreutils shellcheck ]);
-            packages.cardano-cli.components.tests.cardano-cli-golden.build-tools =
-              lib.mkForce (with pkgs.buildPackages; [ jq coreutils shellcheck ]);
             packages.cardano-testnet.components.tests.cardano-testnet-tests.build-tools =
               lib.mkForce (with pkgs.buildPackages; [ jq coreutils shellcheck lsof ]);
           })
           ({ pkgs, ... }: {
             # Use the VRF fork of libsodium
             packages.cardano-crypto-praos.components.library.pkgconfig = lib.mkForce [ [ pkgs.libsodium-vrf ] ];
-            packages.cardano-crypto-class.components.library.pkgconfig = lib.mkForce [ [ pkgs.libsodium-vrf pkgs.secp256k1 ] ];
+            packages.cardano-crypto-class.components.library.pkgconfig = lib.mkForce [ [ pkgs.libsodium-vrf pkgs.secp256k1 pkgs.libblst ] ];
           })
           ({ pkgs, options, ... }: {
             # add shell completion:
@@ -122,15 +116,13 @@ let
               ];
               goldenConfigFiles = [
                 "configuration/defaults/byron-mainnet"
-                "cardano-cli/test/cardano-cli-golden/files/golden/alonzo/genesis.alonzo.spec.json"
-                "cardano-cli/test/cardano-cli-golden/files/golden/conway/genesis.conway.spec.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/allegra_node_default_config.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/alonzo_node_default_config.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/babbage_node_default_config.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/byron_node_default_config.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/conway_node_default_config.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/mary_node_default_config.json"
-                "cardano-testnet/test/cardano-testnet-test/files/golden/shelley_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/allegra_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/alonzo_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/babbage_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/byron_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/conway_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/mary_node_default_config.json"
+                "cardano-testnet/test/cardano-testnet-golden/files/golden/shelley_node_default_config.json"
                 "cardano-testnet/files/data/alonzo/genesis.alonzo.spec.json"
                 "cardano-testnet/files/data/conway/genesis.conway.spec.json"
               ];
@@ -138,27 +130,6 @@ let
             {
               # split data output for ekg to reduce closure size
               packages.ekg.components.library.enableSeparateDataOutput = true;
-              # cardano-cli tests depend on cardano-cli and some config files:
-              packages.cardano-cli.components.tests.cardano-cli-golden.preCheck =
-                let
-                  # This define files included in the directory that will be passed to `H.getProjectBase` for this test:
-                  filteredProjectBase = incl ../. [
-                    "scripts/plutus/scripts/v1/custom-guess-42-datum-42.plutus"
-                  ];
-                in
-                ''
-                  ${exportCliPath}
-                  export CARDANO_NODE_SRC=${filteredProjectBase}
-                '';
-              packages.cardano-cli.components.tests.cardano-cli-test.preCheck =
-                let
-                  # This define files included in the directory that will be passed to `H.getProjectBase` for this test:
-                  filteredProjectBase = incl ../. mainnetConfigFiles;
-                in
-                ''
-                  ${exportCliPath}
-                  export CARDANO_NODE_SRC=${filteredProjectBase}
-                '';
               packages.cardano-node-chairman.components.tests.chairman-tests.build-tools =
                 lib.mkForce [
                   pkgs.lsof
@@ -221,13 +192,13 @@ let
                 let
                   # This define files included in the directory that will be passed to `H.getProjectBase` for this test:
                   filteredProjectBase = incl ../. [
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/byron_node_default_config.json"
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/shelley_node_default_config.json"
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/allegra_node_default_config.json"
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/mary_node_default_config.json"
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/alonzo_node_default_config.json"
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/babbage_node_default_config.json"
-                    "cardano-testnet/test/cardano-testnet-test/files/golden/conway_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/allegra_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/alonzo_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/babbage_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/byron_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/conway_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/mary_node_default_config.json"
+                    "cardano-testnet/test/cardano-testnet-golden/files/golden/shelley_node_default_config.json"
                   ];
                 in
                 ''
@@ -276,7 +247,7 @@ let
               };
             in
             {
-              packages = lib.genAttrs projectPackageNames (name: fullyStaticOptions);
+              packages = lib.genAttrs (projectPackageNames ++ ["cardano-cli"]) (name: fullyStaticOptions);
               # Haddock not working and not needed for cross builds
               doHaddock = false;
             }
